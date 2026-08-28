@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Match3.Installers;
 using Syntac.DI.Core.Installers;
 using Syntac.MessagePipe.Installers;
 using VContainer;
@@ -22,6 +23,7 @@ namespace Syntac.DI.Installers
         private IEnumerable<IInstaller> FetchInstallers()
         {
             yield return new GamePipeInstaller();
+            yield return new Match3SceneInstaller();
         }
     }
 }
