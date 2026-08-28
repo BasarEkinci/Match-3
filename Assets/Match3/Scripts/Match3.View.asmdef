@@ -1,0 +1,26 @@
+{
+    "name": "Match3.View",
+    "rootNamespace": "Match3.View",
+    "references": [
+        "Match3.Model",
+        "Match3.Signals",
+        "Match3.Controller",
+        "Syntac.Signals",
+        "Syntac.MessagePipe",
+        "Syntac.DI",
+        "UniTask",
+        "LitMotion",
+        "LitMotion.Extensions",
+        "Unity.InputSystem",
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

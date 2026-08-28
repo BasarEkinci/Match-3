@@ -1,0 +1,17 @@
+{
+    "name": "Match3.Signals",
+    "rootNamespace": "Match3.Signals",
+    "references": [
+        "Match3.Model",
+        "Syntac.Signals"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}

@@ -1,0 +1,20 @@
+{
+    "name": "Match3.Controller",
+    "rootNamespace": "Match3.Controller",
+    "references": [
+        "Match3.Model",
+        "Match3.Signals",
+        "Syntac.Signals",
+        "Syntac.MessagePipe",
+        "UniTask"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": true
+}
