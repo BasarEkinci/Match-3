@@ -15,6 +15,19 @@ namespace Match3.Signals
         public Board Board { get; }
     }
 
+    public readonly struct TileDragSignal : ISignal
+    {
+        public TileDragSignal(GridPosition origin, GridDirection direction)
+        {
+            Origin = origin;
+            Direction = direction;
+        }
+
+        public GridPosition Origin { get; }
+
+        public GridDirection Direction { get; }
+    }
+
     public readonly struct SwapRequestedSignal : ISignal
     {
         public SwapRequestedSignal(GridPosition from, GridPosition to)
@@ -63,6 +76,19 @@ namespace Match3.Signals
         }
 
         public IReadOnlyList<MatchGroup> Groups { get; }
+
+        public int CascadeStep { get; }
+    }
+
+    public readonly struct CellsClearedSignal : ISignal
+    {
+        public CellsClearedSignal(IReadOnlyList<GridPosition> cells, int cascadeStep)
+        {
+            Cells = cells;
+            CascadeStep = cascadeStep;
+        }
+
+        public IReadOnlyList<GridPosition> Cells { get; }
 
         public int CascadeStep { get; }
     }
