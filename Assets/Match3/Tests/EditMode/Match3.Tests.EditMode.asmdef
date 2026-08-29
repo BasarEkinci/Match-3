@@ -1,0 +1,29 @@
+{
+    "name": "Match3.Tests.EditMode",
+    "rootNamespace": "Match3.Tests.EditMode",
+    "references": [
+        "Match3.Model",
+        "Match3.Signals",
+        "Match3.Controller",
+        "Syntac.Signals",
+        "Syntac.MessagePipe",
+        "UniTask",
+        "UnityEngine.TestRunner",
+        "UnityEditor.TestRunner"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": true,
+    "precompiledReferences": [
+        "nunit.framework.dll"
+    ],
+    "autoReferenced": false,
+    "defineConstraints": [
+        "UNITY_INCLUDE_TESTS"
+    ],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
