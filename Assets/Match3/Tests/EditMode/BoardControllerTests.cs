@@ -29,6 +29,7 @@ namespace Match3.Tests.EditMode
         private GamePipe m_GamePipe;
         private ProjectPipe m_ProjectPipe;
         private BoardController m_Controller;
+        private FakeSaveRepository m_Save;
         private Board m_Board;
         private int m_AcceptedCount;
         private int m_ResolvedCount;
@@ -43,6 +44,7 @@ namespace Match3.Tests.EditMode
         {
             m_GamePipe = new GamePipe();
             m_ProjectPipe = new ProjectPipe();
+            m_Save = new FakeSaveRepository();
             m_AcceptedCount = 0;
             m_RejectedCount = 0;
             m_ResolvedCount = 0;
@@ -68,7 +70,9 @@ namespace Match3.Tests.EditMode
                 new GravityResolver(new TestBoardSettings(Width, Height), new Random(Seed)),
                 new MoveScanner(new MatchFinder(new TestBoardSettings(Width, Height))),
                 new ChainResolver(new SpecialTileEffects()),
-                new SpecialCombinationResolver());
+                new SpecialCombinationResolver(),
+                TestBoosters.Empty(),
+                m_Save);
         }
 
         [TearDown]
@@ -181,6 +185,60 @@ namespace Match3.Tests.EditMode
             Assert.AreEqual(1, m_RejectedCount);
         }
 
+        [Test]
+        public void RestartingARoundCancelsTheCascadeAndUnlocksInput()
+        {
+            StartRound();
+            RequestSwap(new GridPosition(1, 1), new GridPosition(1, 2));
+            int resolvedBeforeRestart = m_ResolvedCount;
+
+            StartRound();
+            for (int step = 0; step < AnimationStepLimit; step++)
+            {
+                m_GamePipe.Raise(new BoardAnimationCompletedSignal());
+            }
+
+            Assert.IsFalse(m_IsInputLocked);
+            Assert.AreEqual(resolvedBeforeRestart, m_ResolvedCount);
+        }
+
+        [Test]
+        public void InputIsAcceptedRightAfterARestart()
+        {
+            StartRound();
+            RequestSwap(new GridPosition(1, 1), new GridPosition(1, 2));
+
+            StartRound();
+            RequestSwap(new GridPosition(0, 0), new GridPosition(2, 0));
+
+            Assert.AreEqual(1, m_RejectedCount);
+        }
+
+        [Test]
+        public void ResumedRoundLoadsTheSavedBoard()
+        {
+            m_Save.Save(FilledBoard(TileColor.Yellow), 0);
+
+            m_ProjectPipe.Raise(new RoundStartedSignal(true));
+
+            Assert.AreEqual(TileColor.Yellow, ColorAt(0, 0));
+            Assert.AreEqual(TileColor.Yellow, ColorAt(Width - 1, Height - 1));
+        }
+
+        private static Board FilledBoard(TileColor color)
+        {
+            Board board = new Board(Width, Height);
+            for (int y = 0; y < Height; y++)
+            {
+                for (int x = 0; x < Width; x++)
+                {
+                    board.Set(new GridPosition(x, y), new Tile(color));
+                }
+            }
+
+            return board;
+        }
+
         private void AssertBoardIsFull()
         {
             for (int y = 0; y < Height; y++)
@@ -195,7 +253,7 @@ namespace Match3.Tests.EditMode
 
         private void StartRound()
         {
-            m_ProjectPipe.Raise(new RoundStartedSignal());
+            m_ProjectPipe.Raise(new RoundStartedSignal(false));
         }
 
         private void RequestSwap(GridPosition from, GridPosition to)

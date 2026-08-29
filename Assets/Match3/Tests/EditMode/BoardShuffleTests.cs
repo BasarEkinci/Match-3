@@ -67,7 +67,9 @@ namespace Match3.Tests.EditMode
                 new StubGravityResolver(DeadlockLayout),
                 m_MoveScanner,
                 new ChainResolver(new SpecialTileEffects()),
-                new SpecialCombinationResolver());
+                new SpecialCombinationResolver(),
+                TestBoosters.Empty(),
+                new FakeSaveRepository());
         }
 
         [TearDown]
@@ -81,7 +83,7 @@ namespace Match3.Tests.EditMode
         [Test]
         public void DeadlockedBoardIsReshuffledIntoPlayableState()
         {
-            m_ProjectPipe.Raise(new RoundStartedSignal());
+            m_ProjectPipe.Raise(new RoundStartedSignal(false));
             m_GamePipe.Raise(new SwapRequestedSignal(new GridPosition(1, 1), new GridPosition(1, 2)));
             CompleteAnimations();
 
@@ -105,9 +107,11 @@ namespace Match3.Tests.EditMode
                 new StubGravityResolver(PlayableLayout),
                 m_MoveScanner,
                 new ChainResolver(new SpecialTileEffects()),
-                new SpecialCombinationResolver());
+                new SpecialCombinationResolver(),
+                TestBoosters.Empty(),
+                new FakeSaveRepository());
 
-            m_ProjectPipe.Raise(new RoundStartedSignal());
+            m_ProjectPipe.Raise(new RoundStartedSignal(false));
             m_GamePipe.Raise(new SwapRequestedSignal(new GridPosition(1, 1), new GridPosition(1, 2)));
             CompleteAnimations();
 

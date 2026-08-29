@@ -51,7 +51,9 @@ namespace Match3.Tests.EditMode
                 new StubGravityResolver(PlayableLayout),
                 new MoveScanner(matchFinder),
                 new ChainResolver(new SpecialTileEffects()),
-                new SpecialCombinationResolver());
+                new SpecialCombinationResolver(),
+                TestBoosters.Empty(),
+                new FakeSaveRepository());
         }
 
         [TearDown]
@@ -65,7 +67,7 @@ namespace Match3.Tests.EditMode
         [Test]
         public void DisposeStopsCascadeWithoutFurtherSignals()
         {
-            m_ProjectPipe.Raise(new RoundStartedSignal());
+            m_ProjectPipe.Raise(new RoundStartedSignal(false));
             m_GamePipe.Raise(new SwapRequestedSignal(new GridPosition(1, 1), new GridPosition(1, 2)));
 
             m_Controller.Dispose();
@@ -82,7 +84,7 @@ namespace Match3.Tests.EditMode
             m_Controller.Dispose();
             m_SignalCount = 0;
 
-            m_ProjectPipe.Raise(new RoundStartedSignal());
+            m_ProjectPipe.Raise(new RoundStartedSignal(false));
             m_GamePipe.Raise(new SwapRequestedSignal(new GridPosition(1, 1), new GridPosition(1, 2)));
 
             Assert.AreEqual(0, m_SignalCount);

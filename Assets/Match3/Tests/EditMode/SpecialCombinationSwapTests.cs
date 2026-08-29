@@ -69,9 +69,11 @@ namespace Match3.Tests.EditMode
                 new StubGravityResolver(Layout),
                 new MoveScanner(matchFinder),
                 new ChainResolver(new SpecialTileEffects()),
-                new SpecialCombinationResolver());
+                new SpecialCombinationResolver(),
+                TestBoosters.Empty(),
+                new FakeSaveRepository());
 
-            m_ProjectPipe.Raise(new RoundStartedSignal());
+            m_ProjectPipe.Raise(new RoundStartedSignal(false));
         }
 
         [TearDown]
