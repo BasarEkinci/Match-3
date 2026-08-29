@@ -47,7 +47,8 @@ namespace Match3.Model.Matching
                 for (int offset = 0; offset < laneLength; offset++)
                 {
                     board.TryGet(ToPosition(lane, offset, horizontal), out Tile tile);
-                    bool continuesRun = runLength > 0 && !tile.IsEmpty && tile.Color == runColor;
+                    bool isMatchable = IsMatchable(tile);
+                    bool continuesRun = runLength > 0 && isMatchable && tile.Color == runColor;
                     if (continuesRun)
                     {
                         runLength++;
@@ -55,7 +56,7 @@ namespace Match3.Model.Matching
                     }
 
                     AddRun(lane, offset - runLength, runLength, runColor, horizontal);
-                    runLength = tile.IsEmpty ? 0 : 1;
+                    runLength = isMatchable ? 1 : 0;
                     runColor = tile.Color;
                 }
 
@@ -198,6 +199,9 @@ namespace Match3.Model.Matching
             m_RunRoots[firstRoot > secondRoot ? firstRoot : secondRoot] =
                 firstRoot < secondRoot ? firstRoot : secondRoot;
         }
+
+        private static bool IsMatchable(Tile tile) =>
+            !tile.IsEmpty && tile.Special != SpecialTileType.ColorBomb;
 
         private static GridPosition ToPosition(int lane, int offset, bool horizontal) =>
             horizontal ? new GridPosition(offset, lane) : new GridPosition(lane, offset);
