@@ -23,8 +23,18 @@ namespace Match3.Signals
         public GameScreen Screen { get; }
     }
 
+    public readonly struct RoundRestartRequestedSignal : ISignal
+    {
+    }
+
     public readonly struct RoundStartedSignal : ISignal
     {
+        public RoundStartedSignal(bool isResumed)
+        {
+            IsResumed = isResumed;
+        }
+
+        public bool IsResumed { get; }
     }
 
     public readonly struct RoundEndedSignal : ISignal
@@ -35,15 +45,5 @@ namespace Match3.Signals
         }
 
         public int Score { get; }
-    }
-
-    public readonly struct HighScoreChangedSignal : ISignal
-    {
-        public HighScoreChangedSignal(int highScore)
-        {
-            HighScore = highScore;
-        }
-
-        public int HighScore { get; }
     }
 }
