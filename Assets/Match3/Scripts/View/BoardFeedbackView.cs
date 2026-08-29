@@ -12,8 +12,6 @@ namespace Match3.View
     public sealed class BoardFeedbackView : IDisposable
     {
         private const string RootName = "Feedback";
-        private const string BurstPrefabPath = "Match3/VFX/MatchBurst";
-        private const string MatchClipPath = "Match3/Audio/MatchPop";
         private const int BurstParticleCount = 12;
         private const float BasePitch = 1f;
         private const float PitchPerCascadeStep = 0.08f;
@@ -34,7 +32,7 @@ namespace Match3.View
         private MotionHandle m_ShakeHandle;
         private bool m_IsDisposed;
 
-        public BoardFeedbackView(GamePipe gamePipe, BoardGeometry geometry)
+        public BoardFeedbackView(GamePipe gamePipe, BoardGeometry geometry, ParticleSystem burstPrefab, AudioClip matchClip)
         {
             m_GamePipe = gamePipe;
             m_Geometry = geometry;
@@ -42,8 +40,8 @@ namespace Match3.View
             m_Root = new GameObject(RootName).transform;
             m_AudioSource = m_Root.gameObject.AddComponent<AudioSource>();
             m_AudioSource.playOnAwake = false;
-            m_MatchClip = Resources.Load<AudioClip>(MatchClipPath);
-            m_Burst = CreateBurst();
+            m_MatchClip = matchClip;
+            m_Burst = CreateBurst(burstPrefab);
 
             m_GamePipe.SubscribeTo<CellsClearedSignal>(OnCellsCleared);
         }
@@ -64,9 +62,8 @@ namespace Match3.View
             }
         }
 
-        private ParticleSystem CreateBurst()
+        private ParticleSystem CreateBurst(ParticleSystem prefab)
         {
-            ParticleSystem prefab = Resources.Load<ParticleSystem>(BurstPrefabPath);
             if (prefab == null)
             {
                 return null;

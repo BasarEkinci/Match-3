@@ -7,7 +7,6 @@ namespace Match3.View
 {
     public sealed class TilePool : IDisposable
     {
-        private const string SpritePathPrefix = "Match3/Gems/T_Gem_";
         private const string ContainerName = "Tiles";
         private const string TileName = "Tile";
         private const int DefaultCapacity = 64;
@@ -17,10 +16,16 @@ namespace Match3.View
         private readonly Transform m_Container;
         private readonly ObjectPool<TileView> m_Pool;
 
-        public TilePool()
+        public TilePool(Sprite[] sprites)
         {
+            int colorCount = Enum.GetNames(typeof(TileColor)).Length;
+            if (sprites == null || sprites.Length != colorCount)
+            {
+                throw new ArgumentException($"Expected {colorCount} tile sprites ordered by {nameof(TileColor)}.", nameof(sprites));
+            }
+
             m_Container = new GameObject(ContainerName).transform;
-            m_Sprites = LoadSprites();
+            m_Sprites = sprites;
             m_Pool = new ObjectPool<TileView>(CreateTile, ActivateTile, DeactivateTile, DestroyTile, true, DefaultCapacity, MaxSize);
         }
 
@@ -43,23 +48,6 @@ namespace Match3.View
             {
                 UnityEngine.Object.Destroy(m_Container.gameObject);
             }
-        }
-
-        private static Sprite[] LoadSprites()
-        {
-            string[] names = Enum.GetNames(typeof(TileColor));
-            Sprite[] sprites = new Sprite[names.Length];
-            for (int index = 0; index < names.Length; index++)
-            {
-                string path = SpritePathPrefix + names[index];
-                sprites[index] = Resources.Load<Sprite>(path);
-                if (sprites[index] == null)
-                {
-                    throw new NullReferenceException($"No tile sprite at Resources/{path}.");
-                }
-            }
-
-            return sprites;
         }
 
         private TileView CreateTile()

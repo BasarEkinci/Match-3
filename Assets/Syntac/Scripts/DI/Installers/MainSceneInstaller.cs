@@ -23,7 +23,7 @@ namespace Syntac.DI.Installers
         private IEnumerable<IInstaller> FetchInstallers()
         {
             yield return new GamePipeInstaller();
-            yield return new Match3SceneInstaller();
+            yield return new Match3ModelInstaller();
         }
     }
 }
