@@ -28,6 +28,16 @@ namespace Match3.Signals
         public GridDirection Direction { get; }
     }
 
+    public readonly struct TileTapSignal : ISignal
+    {
+        public TileTapSignal(GridPosition origin)
+        {
+            Origin = origin;
+        }
+
+        public GridPosition Origin { get; }
+    }
+
     public readonly struct SwapRequestedSignal : ISignal
     {
         public SwapRequestedSignal(GridPosition from, GridPosition to)

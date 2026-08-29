@@ -27,6 +27,29 @@ namespace Match3.Signals
         public BoosterType Booster { get; }
     }
 
+    public readonly struct BoosterSelectionRequestedSignal : ISignal
+    {
+        public BoosterSelectionRequestedSignal(BoosterType booster)
+        {
+            Booster = booster;
+        }
+
+        public BoosterType Booster { get; }
+    }
+
+    public readonly struct BoosterSelectionChangedSignal : ISignal
+    {
+        public BoosterSelectionChangedSignal(BoosterType booster, bool isActive)
+        {
+            Booster = booster;
+            IsActive = isActive;
+        }
+
+        public BoosterType Booster { get; }
+
+        public bool IsActive { get; }
+    }
+
     public readonly struct BoosterUseRequestedSignal : ISignal
     {
         public BoosterUseRequestedSignal(BoosterType booster, GridPosition target)
@@ -42,11 +65,14 @@ namespace Match3.Signals
 
     public readonly struct BoosterAppliedSignal : ISignal
     {
-        public BoosterAppliedSignal(BoosterType booster)
+        public BoosterAppliedSignal(BoosterType booster, GridPosition target)
         {
             Booster = booster;
+            Target = target;
         }
 
         public BoosterType Booster { get; }
+
+        public GridPosition Target { get; }
     }
 }

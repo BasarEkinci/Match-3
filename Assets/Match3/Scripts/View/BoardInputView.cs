@@ -53,6 +53,7 @@ namespace Match3.View
             if (pointer.press.wasReleasedThisFrame)
             {
                 m_HasOrigin = false;
+                m_GamePipe.Raise(new TileTapSignal(m_Origin));
                 return;
             }
 
