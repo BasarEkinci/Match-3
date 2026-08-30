@@ -154,6 +154,24 @@ namespace Match3.Tests.EditMode
         }
 
         [Test]
+        public void ABombSwappedIntoAMatchCreatingMoveStillDetonates()
+        {
+            m_Board.Set(First, new Tile(TileColor.Purple, SpecialTileType.Bomb));
+            m_Board.Set(Second, new Tile(TileColor.Yellow));
+            m_Board.Set(new GridPosition(First.X, First.Y - 1), new Tile(TileColor.Yellow));
+            m_Board.Set(Above, new Tile(TileColor.Yellow));
+
+            Swap();
+
+            AssertCleared(First);
+            AssertCleared(Above);
+            for (int y = Second.Y - 1; y <= Second.Y + 1; y++)
+            {
+                AssertCleared(new GridPosition(Second.X + 1, y));
+            }
+        }
+
+        [Test]
         public void TappingARocketClearsItsRow()
         {
             m_Board.Set(First, new Tile(TileColor.Purple, SpecialTileType.HorizontalRocket));

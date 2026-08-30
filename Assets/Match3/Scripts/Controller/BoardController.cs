@@ -134,14 +134,17 @@ namespace Match3.Controller
 
             m_Seeds.Clear();
             bool isCombination = IsCombination(signal.From, signal.To);
-            if (isCombination)
+            m_Board.Swap(signal.From, signal.To);
+            if (!isCombination)
             {
-                m_Board.Swap(signal.From, signal.To);
-            }
-            else if (!CreatesMatch(signal.From, signal.To) && !TrySeedActivation(signal.From, signal.To))
-            {
-                m_GamePipe.Raise(new SwapRejectedSignal(signal.From, signal.To));
-                return;
+                bool createsMatch = m_MatchFinder.FindMatches(m_Board).Count > 0;
+                bool hasSpecial = TrySeed(signal.From) | TrySeed(signal.To);
+                if (!createsMatch && !hasSpecial)
+                {
+                    m_Board.Swap(signal.From, signal.To);
+                    m_GamePipe.Raise(new SwapRejectedSignal(signal.From, signal.To));
+                    return;
+                }
             }
 
             m_State = BoardState.Swapping;
@@ -167,34 +170,16 @@ namespace Match3.Controller
             ResolveCascade(signal.Position, signal.Position, m_Round.Token).Forget();
         }
 
-        private bool TrySeedActivation(GridPosition from, GridPosition to)
-        {
-            if (!HasSpecial(from) && !HasSpecial(to))
-            {
-                return false;
-            }
-
-            m_Board.Swap(from, to);
-            TrySeed(from);
-            TrySeed(to);
-            return true;
-        }
-
         private bool TrySeed(GridPosition position)
         {
-            if (!HasSpecial(position))
+            m_Board.TryGet(position, out Tile tile);
+            if (tile.IsEmpty || tile.Special == SpecialTileType.None)
             {
                 return false;
             }
 
             m_Seeds.Add(new ClearedCell(position, FirstWave));
             return true;
-        }
-
-        private bool HasSpecial(GridPosition position)
-        {
-            m_Board.TryGet(position, out Tile tile);
-            return !tile.IsEmpty && tile.Special != SpecialTileType.None;
         }
 
         private async UniTaskVoid RunSwap(
@@ -220,15 +205,18 @@ namespace Match3.Controller
             int cascadeStep = FirstCascadeStep;
             while (true)
             {
-                IReadOnlyList<MatchGroup> groups = null;
-                if (m_Seeds.Count == 0)
+                IReadOnlyList<MatchGroup> groups = m_MatchFinder.FindMatches(m_Board);
+                if (groups.Count == 0)
                 {
-                    groups = m_MatchFinder.FindMatches(m_Board);
-                    if (groups.Count == 0)
+                    if (m_Seeds.Count == 0)
                     {
                         break;
                     }
 
+                    groups = null;
+                }
+                else
+                {
                     SeedGroups(groups);
                     m_GamePipe.Raise(new MatchesResolvedSignal(groups, cascadeStep));
                 }
@@ -391,18 +379,6 @@ namespace Match3.Controller
         private void OnAnimationCompleted(ref BoardAnimationCompletedSignal signal)
         {
             m_AnimationCompletion?.TrySetResult();
-        }
-
-        private bool CreatesMatch(GridPosition from, GridPosition to)
-        {
-            m_Board.Swap(from, to);
-            if (m_MatchFinder.FindMatches(m_Board).Count > 0)
-            {
-                return true;
-            }
-
-            m_Board.Swap(from, to);
-            return false;
         }
 
         private bool IsSwappable(GridPosition from, GridPosition to) =>
