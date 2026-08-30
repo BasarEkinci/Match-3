@@ -3,7 +3,7 @@
     "rootNamespace": "Match3.Signals",
     "references": [
         "Match3.Model",
-        "Syntac.Signals"
+        "Match3.Core.Signals"
     ],
     "includePlatforms": [],
     "excludePlatforms": [],

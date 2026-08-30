@@ -5,7 +5,7 @@ using Match3.Model.Enums;
 using Match3.Model.Scoring;
 using Match3.Signals;
 using NUnit.Framework;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Tests.EditMode
 {
@@ -96,12 +96,12 @@ namespace Match3.Tests.EditMode
             Assert.AreEqual(0, m_Changes.Count);
         }
 
-        private static IReadOnlyList<GridPosition> Cells(int count)
+        private static IReadOnlyList<ClearedCell> Cells(int count)
         {
-            List<GridPosition> cells = new List<GridPosition>();
+            List<ClearedCell> cells = new List<ClearedCell>();
             for (int x = 0; x < count; x++)
             {
-                cells.Add(new GridPosition(x, 0));
+                cells.Add(new ClearedCell(new GridPosition(x, 0), 0));
             }
 
             return cells;

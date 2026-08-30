@@ -1,7 +1,8 @@
 {
-    "name": "Syntac.DI",
-    "rootNamespace": "Syntac.DI",
+    "name": "Match3.Core.MessagePipe",
+    "rootNamespace": "Match3.Core.MessagePipe",
     "references": [
+        "Match3.Core.Signals",
         "GUID:b0214a6008ed146ff8f122a6a9c2f6cc"
     ],
     "includePlatforms": [],

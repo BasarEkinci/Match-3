@@ -1,8 +1,8 @@
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 using VContainer;
 using VContainer.Unity;
 
-namespace Syntac.MessagePipe.Installers
+namespace Match3.Core.MessagePipe.Installers
 {
     public class GamePipeInstaller : IInstaller
     {

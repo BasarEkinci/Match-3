@@ -1,7 +1,9 @@
 {
-    "name": "Syntac.Signals",
-    "rootNamespace": "Syntac.Signals",
-    "references": [],
+    "name": "Match3.Core.DI",
+    "rootNamespace": "Match3.Core.DI",
+    "references": [
+        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

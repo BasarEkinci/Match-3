@@ -2,7 +2,7 @@ using System;
 using Match3.Model.Persistence;
 using Match3.Model.Scoring;
 using Match3.Signals;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Controller
 {

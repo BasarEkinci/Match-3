@@ -1,10 +1,7 @@
 {
-    "name": "Syntac.MessagePipe",
-    "rootNamespace": "Syntac.MessagePipe",
-    "references": [
-        "Syntac.Signals",
-        "GUID:b0214a6008ed146ff8f122a6a9c2f6cc"
-    ],
+    "name": "Match3.Core.Signals",
+    "rootNamespace": "Match3.Core.Signals",
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

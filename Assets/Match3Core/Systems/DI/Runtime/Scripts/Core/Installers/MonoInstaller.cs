@@ -2,7 +2,7 @@ using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
-namespace Syntac.DI.Core.Installers
+namespace Match3.Core.DI.Installers
 {
     /// <summary>
     /// Base class for installers that need to carry asset references, which a plain

@@ -5,8 +5,8 @@
         "Match3.Model",
         "Match3.Signals",
         "Match3.Controller",
-        "Syntac.Signals",
-        "Syntac.MessagePipe",
+        "Match3.Core.Signals",
+        "Match3.Core.MessagePipe",
         "UniTask",
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner"

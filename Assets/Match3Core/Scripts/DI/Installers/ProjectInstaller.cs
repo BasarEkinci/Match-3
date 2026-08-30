@@ -1,10 +1,10 @@
 using System.Collections.Generic;
-using Syntac.DI.Core.Installers;
-using Syntac.MessagePipe.Installers;
+using Match3.Core.DI.Installers;
+using Match3.Core.MessagePipe.Installers;
 using VContainer;
 using VContainer.Unity;
 
-namespace Syntac.DI.Installers
+namespace Match3.Core.DI.Installers
 {
     /// <summary>
     /// The only place framework modules are composed into the root scope. Adding a system is a single

@@ -1,4 +1,4 @@
-using Syntac.Signals;
+using Match3.Core.Signals;
 
 namespace Match3.Signals
 {

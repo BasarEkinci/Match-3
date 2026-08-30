@@ -1,8 +1,8 @@
 using System;
-using Syntac.DI.Core.Scopes;
+using Match3.Core.DI.Scopes;
 using UnityEngine;
 
-namespace Syntac.DI.Core
+namespace Match3.Core.DI
 {
     /// <summary>
     /// Creates the application-wide <see cref="ProjectLifetimeScope"/> before the first scene loads,

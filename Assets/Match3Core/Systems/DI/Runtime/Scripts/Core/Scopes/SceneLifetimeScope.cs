@@ -1,9 +1,9 @@
-using Syntac.DI.Core.Installers;
+using Match3.Core.DI.Installers;
 using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
-namespace Syntac.DI.Core.Scopes
+namespace Match3.Core.DI.Scopes
 {
     /// <summary>
     /// Child scope of <see cref="ProjectLifetimeScope"/>, torn down with its scene.

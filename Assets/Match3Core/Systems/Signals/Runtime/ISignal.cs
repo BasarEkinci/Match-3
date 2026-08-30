@@ -1,7 +1,7 @@
-namespace Syntac.Signals
+namespace Match3.Core.Signals
 {
     /// <summary>
-    /// Marker interface for all events published on a Syntac event bus.
+    /// Marker interface for all events published on a Match3 event bus.
     /// Implement this on <c>readonly struct</c> types: the bus passes events by <c>ref</c>,
     /// so struct signals are allocation-free.
     /// </summary>
