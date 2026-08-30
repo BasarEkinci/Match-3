@@ -4,8 +4,9 @@ using LitMotion;
 using LitMotion.Extensions;
 using Match3.Model;
 using Match3.Signals;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 using UnityEngine;
+using UnityEngine.Audio;
 
 namespace Match3.View
 {
@@ -26,13 +27,12 @@ namespace Match3.View
         private readonly Transform m_Root;
         private readonly ParticleSystem m_Burst;
         private readonly AudioSource m_AudioSource;
-        private readonly AudioClip m_MatchClip;
         private readonly Camera m_Camera;
 
         private MotionHandle m_ShakeHandle;
         private bool m_IsDisposed;
-
-        public BoardFeedbackView(GamePipe gamePipe, BoardGeometry geometry, ParticleSystem burstPrefab, AudioClip matchClip)
+        
+        public BoardFeedbackView(GamePipe gamePipe, BoardGeometry geometry, ParticleSystem burstPrefab, AudioResource matchContainer)
         {
             m_GamePipe = gamePipe;
             m_Geometry = geometry;
@@ -40,7 +40,7 @@ namespace Match3.View
             m_Root = new GameObject(RootName).transform;
             m_AudioSource = m_Root.gameObject.AddComponent<AudioSource>();
             m_AudioSource.playOnAwake = false;
-            m_MatchClip = matchClip;
+            m_AudioSource.resource = matchContainer;
             m_Burst = CreateBurst(burstPrefab);
 
             m_GamePipe.SubscribeTo<CellsClearedSignal>(OnCellsCleared);
@@ -79,7 +79,7 @@ namespace Match3.View
             ShakeCamera();
         }
 
-        private void EmitBursts(IReadOnlyList<GridPosition> cells)
+        private void EmitBursts(IReadOnlyList<ClearedCell> cells)
         {
             if (m_Burst == null)
             {
@@ -89,7 +89,7 @@ namespace Match3.View
             ParticleSystem.EmitParams emitParams = new ParticleSystem.EmitParams();
             for (int index = 0; index < cells.Count; index++)
             {
-                emitParams.position = m_Geometry.ToWorld(cells[index]);
+                emitParams.position = m_Geometry.ToWorld(cells[index].Position);
                 emitParams.applyShapeToPosition = true;
                 m_Burst.Emit(emitParams, BurstParticleCount);
             }
@@ -97,7 +97,7 @@ namespace Match3.View
 
         private void PlayMatchSound(int cascadeStep)
         {
-            if (m_MatchClip == null)
+            if (m_AudioSource.resource == null)
             {
                 return;
             }
@@ -105,7 +105,7 @@ namespace Match3.View
             m_AudioSource.pitch = Mathf.Min(
                 BasePitch + ((cascadeStep - FirstCascadeStep) * PitchPerCascadeStep),
                 MaxPitch);
-            m_AudioSource.PlayOneShot(m_MatchClip);
+            m_AudioSource.Play();
         }
 
         private void ShakeCamera()
