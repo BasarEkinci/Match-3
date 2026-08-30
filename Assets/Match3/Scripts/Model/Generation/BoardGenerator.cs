@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Match3.Model.Enums;
 using Match3.Model.Matching;
 using Match3.Model.Settings;
@@ -33,7 +33,7 @@ namespace Match3.Model.Generation
         public void Generate(Board board)
         {
             FillWithoutMatches(board);
-            if (!m_MoveScanner.HasAnyMove(board))
+            if (!m_MoveScanner.TryFindMove(board, out _, out _))
             {
                 SwapUntilMoveExists(board);
             }
@@ -105,7 +105,7 @@ namespace Match3.Model.Generation
                     GridPosition from = ToPosition(board, first);
                     GridPosition to = ToPosition(board, second);
                     board.Swap(from, to);
-                    if (m_MatchFinder.FindMatches(board).Count == 0 && m_MoveScanner.HasAnyMove(board))
+                    if (m_MatchFinder.FindMatches(board).Count == 0 && m_MoveScanner.TryFindMove(board, out _, out _))
                     {
                         return;
                     }

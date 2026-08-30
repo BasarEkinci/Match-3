@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Match3.Model;
 using Match3.Model.Generation;
 using Match3.Model.Matching;
@@ -26,7 +26,7 @@ namespace Match3.Tests.EditMode
             generator.Generate(board);
 
             Assert.AreEqual(0, matchFinder.FindMatches(board).Count);
-            Assert.IsTrue(moveScanner.HasAnyMove(board));
+            Assert.IsTrue(moveScanner.TryFindMove(board, out _, out _));
             AssertFull(board);
         }
 

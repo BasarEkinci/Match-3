@@ -1,4 +1,4 @@
-using Match3.Model;
+﻿using Match3.Model;
 using Match3.Model.Enums;
 using Match3.Model.Matching;
 using NUnit.Framework;
@@ -37,22 +37,36 @@ namespace Match3.Tests.EditMode
         [Test]
         public void DeadlockBoardHasNoMove()
         {
-            Assert.IsFalse(m_Scanner.HasAnyMove(CreateBoard(DeadlockLayout)));
+            Assert.IsFalse(m_Scanner.TryFindMove(CreateBoard(DeadlockLayout), out _, out _));
         }
 
         [Test]
         public void PlayableBoardHasMove()
         {
-            Assert.IsTrue(m_Scanner.HasAnyMove(CreateBoard(PlayableLayout)));
+            Assert.IsTrue(m_Scanner.TryFindMove(CreateBoard(PlayableLayout), out _, out _));
+        }
+
+        [Test]
+        public void FoundMoveCreatesMatchWhenApplied()
+        {
+            Board board = CreateBoard(PlayableLayout);
+
+            Assert.IsTrue(m_Scanner.TryFindMove(board, out GridPosition from, out GridPosition to));
+
+            board.Swap(from, to);
+            Assert.Greater(new MatchFinder(new TestBoardSettings(Width, Height)).FindMatches(board).Count, 0);
         }
 
         [Test]
         public void ColorBombAlwaysCountsAsMove()
         {
             Board board = CreateBoard(DeadlockLayout);
-            board.Set(new GridPosition(0, 0), new Tile(TileColor.Red, SpecialTileType.ColorBomb));
+            GridPosition bomb = new GridPosition(0, 0);
+            board.Set(bomb, new Tile(TileColor.Red, SpecialTileType.ColorBomb));
 
-            Assert.IsTrue(m_Scanner.HasAnyMove(board));
+            Assert.IsTrue(m_Scanner.TryFindMove(board, out GridPosition from, out GridPosition to));
+            Assert.AreEqual(bomb, from);
+            Assert.AreEqual(bomb, to);
         }
 
         private static Board CreateBoard(TileColor[,] layout)

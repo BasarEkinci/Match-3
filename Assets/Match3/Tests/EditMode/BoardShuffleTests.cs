@@ -1,11 +1,11 @@
-using Match3.Controller;
+﻿using Match3.Controller;
 using Match3.Model;
 using Match3.Model.Enums;
 using Match3.Model.Matching;
 using Match3.Model.Special;
 using Match3.Signals;
 using NUnit.Framework;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Tests.EditMode
 {
@@ -68,7 +68,6 @@ namespace Match3.Tests.EditMode
                 m_MoveScanner,
                 new ChainResolver(new SpecialTileEffects()),
                 new SpecialCombinationResolver(),
-                TestBoosters.Empty(),
                 new FakeSaveRepository());
         }
 
@@ -90,7 +89,7 @@ namespace Match3.Tests.EditMode
             Assert.AreEqual(1, m_ShuffleStartedCount);
             Assert.AreEqual(1, m_ShuffleCompletedCount);
             Assert.AreEqual(0, m_MatchFinder.FindMatches(m_Board).Count);
-            Assert.IsTrue(m_MoveScanner.HasAnyMove(m_Board));
+            Assert.IsTrue(m_MoveScanner.TryFindMove(m_Board, out _, out _));
             Assert.IsTrue(m_HasUnlocked);
         }
 
@@ -108,7 +107,6 @@ namespace Match3.Tests.EditMode
                 m_MoveScanner,
                 new ChainResolver(new SpecialTileEffects()),
                 new SpecialCombinationResolver(),
-                TestBoosters.Empty(),
                 new FakeSaveRepository());
 
             m_ProjectPipe.Raise(new RoundStartedSignal(false));

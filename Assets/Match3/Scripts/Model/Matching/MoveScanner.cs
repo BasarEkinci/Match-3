@@ -11,7 +11,7 @@ namespace Match3.Model.Matching
             m_MatchFinder = matchFinder;
         }
 
-        public bool HasAnyMove(Board board)
+        public bool TryFindMove(Board board, out GridPosition from, out GridPosition to)
         {
             for (int y = 0; y < board.Height; y++)
             {
@@ -21,17 +21,31 @@ namespace Match3.Model.Matching
                     board.TryGet(position, out Tile tile);
                     if (!tile.IsEmpty && tile.Special == SpecialTileType.ColorBomb)
                     {
+                        from = position;
+                        to = position;
                         return true;
                     }
 
-                    if (CreatesMatch(board, position, new GridPosition(x + 1, y)) ||
-                        CreatesMatch(board, position, new GridPosition(x, y + 1)))
+                    GridPosition right = new GridPosition(x + 1, y);
+                    GridPosition up = new GridPosition(x, y + 1);
+                    if (CreatesMatch(board, position, right))
                     {
+                        from = position;
+                        to = right;
+                        return true;
+                    }
+
+                    if (CreatesMatch(board, position, up))
+                    {
+                        from = position;
+                        to = up;
                         return true;
                     }
                 }
             }
 
+            from = default;
+            to = default;
             return false;
         }
 

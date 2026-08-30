@@ -2,6 +2,6 @@ namespace Match3.Model.Matching
 {
     public interface IMoveScanner
     {
-        bool HasAnyMove(Board board);
+        bool TryFindMove(Board board, out GridPosition from, out GridPosition to);
     }
 }

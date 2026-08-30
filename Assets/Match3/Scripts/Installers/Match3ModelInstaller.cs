@@ -1,4 +1,4 @@
-using Match3.Controller;
+﻿using Match3.Controller;
 using Match3.Data;
 using Match3.Model.Generation;
 using Match3.Model.Gravity;
@@ -29,10 +29,16 @@ namespace Match3.Installers
             builder.Register<BoardController>(Lifetime.Singleton);
             builder.Register<InputController>(Lifetime.Singleton);
             builder.Register<SaveController>(Lifetime.Singleton);
+            builder.Register<HintController>(Lifetime.Singleton);
             builder.RegisterBuildCallback(container => container.Resolve<ScoreController>());
             builder.RegisterBuildCallback(container => container.Resolve<BoardController>());
             builder.RegisterBuildCallback(container => container.Resolve<InputController>());
             builder.RegisterBuildCallback(container => container.Resolve<SaveController>());
+            builder.RegisterBuildCallback(container => container.Resolve<HintController>());
+#if UNITY_EDITOR
+            builder.Register<DebugSpecialController>(Lifetime.Singleton);
+            builder.RegisterBuildCallback(container => container.Resolve<DebugSpecialController>());
+#endif
         }
     }
 }
