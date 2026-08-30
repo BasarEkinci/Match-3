@@ -13,8 +13,6 @@ namespace Match3.Tests.EditMode
 
         public int SaveCount { get; private set; }
 
-        public int ClearCount { get; private set; }
-
         public int Score { get; private set; }
 
         public void LoadBoard(Board board)
@@ -45,13 +43,6 @@ namespace Match3.Tests.EditMode
                     m_Cells[(y * board.Width) + x] = tile;
                 }
             }
-        }
-
-        public void Clear()
-        {
-            ClearCount++;
-            m_Cells = null;
-            Score = 0;
         }
     }
 }

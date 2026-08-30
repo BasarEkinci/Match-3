@@ -1,42 +1,29 @@
-using System;
 using Match3.Model.Enums;
 using Match3.Signals;
-using Syntac.MessagePipe.Pipes;
-using TMPro;
+using Match3.Core.MessagePipe.Pipes;
 using UnityEngine;
+using UnityEngine.UI;
+using VContainer;
 
 namespace Match3.View
 {
-    public sealed class MainScreenView : IDisposable
+    public sealed class MainScreenView : MonoBehaviour
     {
-        private const string RootName = "MainScreen";
-        private const string PlayText = "PLAY";
-        private const int SortingOrder = 100;
+        [SerializeField] private Button playButton;
 
-        private readonly ProjectPipe m_ProjectPipe;
-        private readonly MenuScreen m_Menu;
+        private ProjectPipe m_ProjectPipe;
 
-        private bool m_IsDisposed;
-
-        public MainScreenView(ProjectPipe projectPipe, TMP_FontAsset font)
+        [Inject]
+        public void Construct(ProjectPipe projectPipe)
         {
             m_ProjectPipe = projectPipe;
-            m_Menu = new MenuScreen(RootName, font, SortingOrder, Application.productName);
-            m_Menu.AddButton(PlayText, RequestGameScreen);
-
+            playButton.onClick.AddListener(RequestGameScreen);
             m_ProjectPipe.SubscribeTo<ScreenChangedSignal>(OnScreenChanged);
         }
 
-        public void Dispose()
+        private void OnDestroy()
         {
-            if (m_IsDisposed)
-            {
-                return;
-            }
-
-            m_IsDisposed = true;
-            m_ProjectPipe.UnsubscribeFrom<ScreenChangedSignal>(OnScreenChanged);
-            m_Menu.Dispose();
+            m_ProjectPipe?.UnsubscribeFrom<ScreenChangedSignal>(OnScreenChanged);
         }
 
         private void RequestGameScreen()
@@ -46,7 +33,7 @@ namespace Match3.View
 
         private void OnScreenChanged(ref ScreenChangedSignal signal)
         {
-            m_Menu.IsVisible = signal.Screen == GameScreen.Main;
+            gameObject.SetActive(signal.Screen == GameScreen.Main);
         }
     }
 }

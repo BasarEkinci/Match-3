@@ -1,5 +1,5 @@
 using Match3.Model.Enums;
-using Syntac.Signals;
+using Match3.Core.Signals;
 
 namespace Match3.Signals
 {
@@ -35,15 +35,5 @@ namespace Match3.Signals
         }
 
         public bool IsResumed { get; }
-    }
-
-    public readonly struct RoundEndedSignal : ISignal
-    {
-        public RoundEndedSignal(int score)
-        {
-            Score = score;
-        }
-
-        public int Score { get; }
     }
 }

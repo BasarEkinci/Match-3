@@ -4,7 +4,6 @@ namespace Match3.Model.Enums
     {
         Main,
         Game,
-        Pause,
-        RoundEnd
+        Pause
     }
 }

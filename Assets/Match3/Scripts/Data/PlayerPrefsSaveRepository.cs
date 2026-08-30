@@ -71,14 +71,5 @@ namespace Match3.Data
             PlayerPrefs.SetInt(HeightKey, board.Height);
             PlayerPrefs.Save();
         }
-
-        public void Clear()
-        {
-            PlayerPrefs.DeleteKey(BoardKey);
-            PlayerPrefs.DeleteKey(ScoreKey);
-            PlayerPrefs.DeleteKey(WidthKey);
-            PlayerPrefs.DeleteKey(HeightKey);
-            PlayerPrefs.Save();
-        }
     }
 }

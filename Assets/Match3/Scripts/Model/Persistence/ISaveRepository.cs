@@ -9,7 +9,5 @@ namespace Match3.Model.Persistence
         int LoadScore();
 
         void Save(Board board, int score);
-
-        void Clear();
     }
 }

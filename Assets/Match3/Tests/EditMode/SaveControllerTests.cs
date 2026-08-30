@@ -3,7 +3,7 @@ using Match3.Model;
 using Match3.Model.Enums;
 using Match3.Signals;
 using NUnit.Framework;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Tests.EditMode
 {
@@ -27,7 +27,7 @@ namespace Match3.Tests.EditMode
             m_GamePipe = new GamePipe();
             m_ProjectPipe = new ProjectPipe();
             m_Repository = new FakeSaveRepository();
-            m_Controller = new SaveController(m_GamePipe, m_ProjectPipe, m_Repository);
+            m_Controller = new SaveController(m_GamePipe, m_Repository);
             m_Board = new Board(Width, Height);
             m_Board.Set(new GridPosition(0, 0), new Tile(TileColor.Blue, SpecialTileType.Bomb));
         }
@@ -82,18 +82,6 @@ namespace Match3.Tests.EditMode
             restored.TryGet(new GridPosition(0, 0), out Tile tile);
             Assert.AreEqual(TileColor.Blue, tile.Color);
             Assert.AreEqual(SpecialTileType.Bomb, tile.Special);
-        }
-
-        [Test]
-        public void EndingTheRoundClearsTheSave()
-        {
-            CreateBoard();
-            m_GamePipe.Raise(new InputLockChangedSignal(false));
-
-            m_ProjectPipe.Raise(new RoundEndedSignal(Score));
-
-            Assert.AreEqual(1, m_Repository.ClearCount);
-            Assert.IsFalse(m_Repository.HasSave);
         }
 
         private void CreateBoard()
