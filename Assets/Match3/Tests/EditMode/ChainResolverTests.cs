@@ -17,14 +17,14 @@ namespace Match3.Tests.EditMode
         private const int TripleChainCellCount = 11;
 
         private ChainResolver m_Resolver;
-        private List<GridPosition> m_Cleared;
+        private List<ClearedCell> m_Cleared;
         private Board m_Board;
 
         [SetUp]
         public void SetUp()
         {
             m_Resolver = new ChainResolver(new SpecialTileEffects());
-            m_Cleared = new List<GridPosition>();
+            m_Cleared = new List<ClearedCell>();
             m_Board = CreateFilledBoard();
         }
 
@@ -105,11 +105,36 @@ namespace Match3.Tests.EditMode
             AssertContains(new GridPosition(2, 2));
         }
 
+        [Test]
+        public void RocketRowClearsAsAWaveFromTheRocket()
+        {
+            m_Board.Set(new GridPosition(1, 2), new Tile(MatchColor, SpecialTileType.HorizontalRocket));
+
+            m_Resolver.Collect(m_Board, (Single(new GridPosition(1, 2))), m_Cleared);
+
+            Assert.AreEqual(0, WaveOf(new GridPosition(1, 2)));
+            Assert.AreEqual(1, WaveOf(new GridPosition(0, 2)));
+            Assert.AreEqual(1, WaveOf(new GridPosition(2, 2)));
+            Assert.AreEqual(3, WaveOf(new GridPosition(4, 2)));
+        }
+
+        [Test]
+        public void ChainedRocketStartsItsWaveWhereItWasTriggered()
+        {
+            m_Board.Set(new GridPosition(0, 2), new Tile(MatchColor, SpecialTileType.HorizontalRocket));
+            m_Board.Set(new GridPosition(4, 2), new Tile(MatchColor, SpecialTileType.VerticalRocket));
+
+            m_Resolver.Collect(m_Board, (Single(new GridPosition(0, 2))), m_Cleared);
+
+            Assert.AreEqual(4, WaveOf(new GridPosition(4, 2)));
+            Assert.AreEqual(6, WaveOf(new GridPosition(4, 0)));
+        }
+
         private void AssertContains(GridPosition position)
         {
             for (int index = 0; index < m_Cleared.Count; index++)
             {
-                if (m_Cleared[index].Equals(position))
+                if (m_Cleared[index].Position.Equals(position))
                 {
                     return;
                 }
@@ -123,30 +148,44 @@ namespace Match3.Tests.EditMode
             HashSet<GridPosition> seen = new HashSet<GridPosition>();
             for (int index = 0; index < m_Cleared.Count; index++)
             {
-                Assert.IsTrue(seen.Add(m_Cleared[index]), "Duplicate cleared cell");
+                Assert.IsTrue(seen.Add(m_Cleared[index].Position), "Duplicate cleared cell");
             }
         }
 
-        private static List<GridPosition> Single(GridPosition position) =>
-            new List<GridPosition> { position };
-
-        private static List<GridPosition> Row(int y, int startX, int length)
+        private int WaveOf(GridPosition position)
         {
-            List<GridPosition> positions = new List<GridPosition>();
+            for (int index = 0; index < m_Cleared.Count; index++)
+            {
+                if (m_Cleared[index].Position.Equals(position))
+                {
+                    return m_Cleared[index].Wave;
+                }
+            }
+
+            Assert.Fail($"Missing cell {position.X},{position.Y}");
+            return -1;
+        }
+
+        private static List<ClearedCell> Single(GridPosition position) =>
+            new List<ClearedCell> { new ClearedCell(position, 0) };
+
+        private static List<ClearedCell> Row(int y, int startX, int length)
+        {
+            List<ClearedCell> positions = new List<ClearedCell>();
             for (int offset = 0; offset < length; offset++)
             {
-                positions.Add(new GridPosition(startX + offset, y));
+                positions.Add(new ClearedCell(new GridPosition(startX + offset, y), 0));
             }
 
             return positions;
         }
 
-        private static List<GridPosition> Column(int x, int startY, int length)
+        private static List<ClearedCell> Column(int x, int startY, int length)
         {
-            List<GridPosition> positions = new List<GridPosition>();
+            List<ClearedCell> positions = new List<ClearedCell>();
             for (int offset = 0; offset < length; offset++)
             {
-                positions.Add(new GridPosition(x, startY + offset));
+                positions.Add(new ClearedCell(new GridPosition(x, startY + offset), 0));
             }
 
             return positions;

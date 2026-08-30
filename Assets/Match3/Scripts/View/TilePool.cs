@@ -11,12 +11,17 @@ namespace Match3.View
         private const string TileName = "Tile";
         private const int DefaultCapacity = 64;
         private const int MaxSize = 128;
+        private const float HorizontalRocketRotation = -45f;
+        private const float VerticalRocketRotation = 45f;
+        private const float NoRotation = 0f;
 
+        private readonly BoardGeometry m_Geometry;
         private readonly Sprite[] m_Sprites;
+        private readonly Sprite[] m_SpecialSprites;
         private readonly Transform m_Container;
         private readonly ObjectPool<TileView> m_Pool;
 
-        public TilePool(Sprite[] sprites)
+        public TilePool(BoardGeometry geometry, Sprite[] sprites, Sprite[] specialSprites)
         {
             int colorCount = Enum.GetNames(typeof(TileColor)).Length;
             if (sprites == null || sprites.Length != colorCount)
@@ -24,16 +29,43 @@ namespace Match3.View
                 throw new ArgumentException($"Expected {colorCount} tile sprites ordered by {nameof(TileColor)}.", nameof(sprites));
             }
 
+            int specialCount = Enum.GetNames(typeof(SpecialTileType)).Length;
+            if (specialSprites == null || specialSprites.Length != specialCount)
+            {
+                throw new ArgumentException($"Expected {specialCount} sprites ordered by {nameof(SpecialTileType)}.", nameof(specialSprites));
+            }
+
+            m_Geometry = geometry;
             m_Container = new GameObject(ContainerName).transform;
             m_Sprites = sprites;
+            m_SpecialSprites = specialSprites;
             m_Pool = new ObjectPool<TileView>(CreateTile, ActivateTile, DeactivateTile, DestroyTile, true, DefaultCapacity, MaxSize);
         }
 
-        public TileView Get(TileColor color, Vector3 position)
+        public TileView Get(TileColor color, SpecialTileType special, Vector3 position)
         {
             TileView tile = m_Pool.Get();
-            tile.Bind(m_Sprites[(int)color], position);
+            Sprite sprite = SpriteOf(color, special);
+            tile.Bind(sprite, position, RotationOf(special), ScaleOf(sprite));
             return tile;
+        }
+
+        private float ScaleOf(Sprite sprite) => m_Geometry.CellSize / sprite.bounds.size.x;
+
+        private Sprite SpriteOf(TileColor color, SpecialTileType special) =>
+            special == SpecialTileType.None ? m_Sprites[(int)color] : m_SpecialSprites[(int)special];
+
+        private static float RotationOf(SpecialTileType special)
+        {
+            switch (special)
+            {
+                case SpecialTileType.HorizontalRocket:
+                    return HorizontalRocketRotation;
+                case SpecialTileType.VerticalRocket:
+                    return VerticalRocketRotation;
+                default:
+                    return NoRotation;
+            }
         }
 
         public void Release(TileView tile)
@@ -57,11 +89,7 @@ namespace Match3.View
             return instance.AddComponent<TileView>();
         }
 
-        private static void ActivateTile(TileView tile)
-        {
-            tile.Transform.localScale = Vector3.one;
-            tile.gameObject.SetActive(true);
-        }
+        private static void ActivateTile(TileView tile) => tile.gameObject.SetActive(true);
 
         private static void DeactivateTile(TileView tile) => tile.gameObject.SetActive(false);
 

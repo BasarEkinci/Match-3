@@ -9,10 +9,14 @@ namespace Match3.View
 
         public Transform Transform => transform;
 
-        public void Bind(Sprite sprite, Vector3 position)
+        public Vector3 BaseScale { get; private set; }
+
+        public void Bind(Sprite sprite, Vector3 position, float rotation, float scale)
         {
             m_Renderer.sprite = sprite;
-            transform.position = position;
+            BaseScale = Vector3.one * scale;
+            transform.SetPositionAndRotation(position, Quaternion.Euler(0f, 0f, rotation));
+            transform.localScale = BaseScale;
         }
 
         private void Awake()

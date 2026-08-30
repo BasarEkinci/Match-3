@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Match3.Model;
 using Match3.Model.Enums;
 using Match3.Model.Matching;
@@ -84,6 +84,19 @@ namespace Match3.Tests.EditMode
             Assert.AreEqual(1, groups.Count);
             Assert.AreEqual(MatchShape.Line5, groups[0].Shape);
             Assert.AreEqual(5, groups[0].Positions.Count);
+        }
+
+        [Test]
+        public void FiveInRowCrossedByATripleStaysLine5()
+        {
+            Board board = CreateFillerBoard();
+            PaintHorizontal(board, 1, 2, 5);
+            PaintVertical(board, 3, 2, 3);
+
+            IReadOnlyList<MatchGroup> groups = m_Finder.FindMatches(board);
+
+            Assert.AreEqual(1, groups.Count);
+            Assert.AreEqual(MatchShape.Line5, groups[0].Shape);
         }
 
         [Test]

@@ -6,7 +6,8 @@ namespace Match3.Model.Special
     public sealed class ChainResolver
     {
         private readonly SpecialTileEffects m_Effects;
-        private readonly List<GridPosition> m_Pending = new List<GridPosition>();
+        private readonly List<ClearedCell> m_Pending = new List<ClearedCell>();
+        private readonly List<GridPosition> m_Buffer = new List<GridPosition>();
 
         private bool[] m_Marked;
 
@@ -15,7 +16,7 @@ namespace Match3.Model.Special
             m_Effects = effects;
         }
 
-        public void Collect(Board board, IReadOnlyList<GridPosition> seeds, List<GridPosition> cleared)
+        public void Collect(Board board, IReadOnlyList<ClearedCell> seeds, List<ClearedCell> cleared)
         {
             PrepareMarks(board);
             cleared.Clear();
@@ -28,16 +29,32 @@ namespace Match3.Model.Special
 
             for (int index = 0; index < m_Pending.Count; index++)
             {
-                GridPosition position = m_Pending[index];
-                int cell = (position.Y * board.Width) + position.X;
+                ClearedCell source = m_Pending[index];
+                int cell = (source.Position.Y * board.Width) + source.Position.X;
                 if (m_Marked[cell])
                 {
                     continue;
                 }
 
                 m_Marked[cell] = true;
-                cleared.Add(position);
-                m_Effects.TryCollect(board, position, m_Pending);
+                cleared.Add(source);
+                Expand(board, source);
+            }
+        }
+
+        private void Expand(Board board, ClearedCell source)
+        {
+            m_Buffer.Clear();
+            if (!m_Effects.TryCollect(board, source.Position, m_Buffer))
+            {
+                return;
+            }
+
+            for (int index = 0; index < m_Buffer.Count; index++)
+            {
+                GridPosition position = m_Buffer[index];
+                m_Pending.Add(
+                    new ClearedCell(position, source.Wave + GridPosition.Distance(source.Position, position)));
             }
         }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Match3.Model.Enums;
 using Match3.Model.Settings;
@@ -120,7 +120,7 @@ namespace Match3.Model.Matching
 
                 List<GridPosition> positions = new List<GridPosition>();
                 int mergedRunCount = 0;
-                Run firstRun = default;
+                Run longestRun = default;
 
                 for (int runIndex = 0; runIndex < m_Runs.Count; runIndex++)
                 {
@@ -130,9 +130,9 @@ namespace Match3.Model.Matching
                     }
 
                     Run run = m_Runs[runIndex];
-                    if (mergedRunCount == 0)
+                    if (mergedRunCount == 0 || run.Length > longestRun.Length)
                     {
-                        firstRun = run;
+                        longestRun = run;
                     }
 
                     mergedRunCount++;
@@ -150,7 +150,7 @@ namespace Match3.Model.Matching
                     }
                 }
 
-                groups.Add(new MatchGroup(positions, firstRun.Color, ResolveShape(firstRun, mergedRunCount)));
+                groups.Add(new MatchGroup(positions, longestRun.Color, ResolveShape(longestRun, mergedRunCount)));
             }
 
             return groups;
@@ -158,6 +158,11 @@ namespace Match3.Model.Matching
 
         private MatchShape ResolveShape(Run run, int mergedRunCount)
         {
+            if (run.Length > Line4Length)
+            {
+                return MatchShape.Line5;
+            }
+
             if (mergedRunCount > 1)
             {
                 return MatchShape.Corner;
@@ -166,11 +171,6 @@ namespace Match3.Model.Matching
             if (run.Length == m_Settings.MinMatchLength)
             {
                 return MatchShape.Line3;
-            }
-
-            if (run.Length > Line4Length)
-            {
-                return MatchShape.Line5;
             }
 
             return run.Horizontal ? MatchShape.Line4Horizontal : MatchShape.Line4Vertical;

@@ -21,17 +21,15 @@ namespace Match3.Model.Special
         private readonly BombEffect m_Blast = new BombEffect(BlastRadius);
         private readonly BombEffect m_WideBlast = new BombEffect(WideBlastRadius);
         private readonly Combination[,] m_Table;
+        private readonly List<GridPosition> m_Buffer = new List<GridPosition>();
 
         public SpecialCombinationResolver()
         {
             int typeCount = Enum.GetNames(typeof(SpecialTileType)).Length;
             m_Table = new Combination[typeCount, typeCount];
 
-            Register(SpecialTileType.HorizontalRocket, SpecialTileType.HorizontalRocket, Cross);
-            Register(SpecialTileType.HorizontalRocket, SpecialTileType.VerticalRocket, Cross);
-            Register(SpecialTileType.VerticalRocket, SpecialTileType.VerticalRocket, Cross);
-            Register(SpecialTileType.HorizontalRocket, SpecialTileType.Bomb, TripleCross);
-            Register(SpecialTileType.VerticalRocket, SpecialTileType.Bomb, TripleCross);
+            Register(SpecialTileType.HorizontalRocket, SpecialTileType.Bomb, TripleLine);
+            Register(SpecialTileType.VerticalRocket, SpecialTileType.Bomb, TripleLine);
             Register(SpecialTileType.Bomb, SpecialTileType.Bomb, WideBlast);
             Register(SpecialTileType.ColorBomb, SpecialTileType.None, ColorSweep);
             Register(SpecialTileType.ColorBomb, SpecialTileType.HorizontalRocket, ColorToRockets);
@@ -43,7 +41,7 @@ namespace Match3.Model.Special
         public bool Contains(SpecialTileType first, SpecialTileType second) =>
             m_Table[(int)first, (int)second] != null;
 
-        public bool TryResolve(Board board, GridPosition from, GridPosition to, List<GridPosition> cells)
+        public bool TryResolve(Board board, GridPosition from, GridPosition to, List<ClearedCell> cells)
         {
             if (!board.TryGet(from, out Tile first) || !board.TryGet(to, out Tile second))
             {
@@ -56,9 +54,15 @@ namespace Match3.Model.Special
                 return false;
             }
 
-            cells.Add(from);
-            cells.Add(to);
-            combination(board, to, first, second, cells);
+            m_Buffer.Clear();
+            m_Buffer.Add(from);
+            m_Buffer.Add(to);
+            combination(board, to, first, second, m_Buffer);
+            for (int index = 0; index < m_Buffer.Count; index++)
+            {
+                cells.Add(new ClearedCell(m_Buffer[index], GridPosition.Distance(to, m_Buffer[index])));
+            }
+
             return true;
         }
 
@@ -68,18 +72,16 @@ namespace Match3.Model.Special
             m_Table[(int)second, (int)first] = combination;
         }
 
-        private void Cross(Board board, GridPosition origin, Tile first, Tile second, List<GridPosition> cells)
+        private void TripleLine(Board board, GridPosition origin, Tile first, Tile second, List<GridPosition> cells)
         {
-            m_HorizontalRocket.Collect(board, origin, first, cells);
-            m_VerticalRocket.Collect(board, origin, first, cells);
-        }
-
-        private void TripleCross(Board board, GridPosition origin, Tile first, Tile second, List<GridPosition> cells)
-        {
+            bool isVertical = IsVerticalPair(first, second);
+            ISpecialTileEffect rocket = isVertical ? m_VerticalRocket : m_HorizontalRocket;
             for (int offset = -BlastRadius; offset <= BlastRadius; offset++)
             {
-                m_HorizontalRocket.Collect(board, new GridPosition(origin.X, origin.Y + offset), first, cells);
-                m_VerticalRocket.Collect(board, new GridPosition(origin.X + offset, origin.Y), first, cells);
+                GridPosition line = isVertical
+                    ? new GridPosition(origin.X + offset, origin.Y)
+                    : new GridPosition(origin.X, origin.Y + offset);
+                rocket.Collect(board, line, first, cells);
             }
         }
 
@@ -168,5 +170,8 @@ namespace Match3.Model.Special
 
         private static Tile Partner(Tile first, Tile second) =>
             first.Special == SpecialTileType.ColorBomb ? second : first;
+
+        private static bool IsVerticalPair(Tile first, Tile second) =>
+            first.Special == SpecialTileType.VerticalRocket || second.Special == SpecialTileType.VerticalRocket;
     }
 }

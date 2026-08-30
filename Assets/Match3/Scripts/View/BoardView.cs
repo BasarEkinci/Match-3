@@ -1,12 +1,14 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using LitMotion;
 using LitMotion.Extensions;
 using Match3.Model;
+using Match3.Model.Enums;
+using Match3.Model.Settings;
 using Match3.Signals;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 using UnityEngine;
 
 namespace Match3.View
@@ -15,6 +17,7 @@ namespace Match3.View
     {
         private const float SwapDuration = 0.18f;
         private const float ClearDuration = 0.15f;
+        private const float ClearStaggerStep = 0.03f;
         private const float FallDuration = 0.22f;
         private const float ShuffleNoticeDuration = 0.4f;
         private const float HighlightStrength = 0.35f;
@@ -24,6 +27,7 @@ namespace Match3.View
         private readonly GamePipe m_GamePipe;
         private readonly TilePool m_Pool;
         private readonly BoardGeometry m_Geometry;
+        private readonly IHintSettings m_HintSettings;
         private readonly List<TileView> m_Clearing = new List<TileView>();
         private readonly CancellationTokenSource m_Lifetime = new CancellationTokenSource();
 
@@ -31,11 +35,12 @@ namespace Match3.View
         private TileView[] m_Tiles;
         private bool m_IsDisposed;
 
-        public BoardView(GamePipe gamePipe, TilePool pool, BoardGeometry geometry)
+        public BoardView(GamePipe gamePipe, TilePool pool, BoardGeometry geometry, IHintSettings hintSettings)
         {
             m_GamePipe = gamePipe;
             m_Pool = pool;
             m_Geometry = geometry;
+            m_HintSettings = hintSettings;
 
             m_GamePipe.SubscribeTo<BoardCreatedSignal>(OnBoardCreated);
             m_GamePipe.SubscribeTo<SwapAcceptedSignal>(OnSwapAccepted);
@@ -45,6 +50,8 @@ namespace Match3.View
             m_GamePipe.SubscribeTo<BoardShuffleStartedSignal>(OnShuffleStarted);
             m_GamePipe.SubscribeTo<BoardShuffleCompletedSignal>(OnShuffleCompleted);
             m_GamePipe.SubscribeTo<SpecialTileCreatedSignal>(OnSpecialTileCreated);
+            m_GamePipe.SubscribeTo<SpecialConversionSignal>(OnSpecialConversion);
+            m_GamePipe.SubscribeTo<HintShownSignal>(OnHintShown);
         }
 
         public void Dispose()
@@ -65,6 +72,8 @@ namespace Match3.View
             m_GamePipe.UnsubscribeFrom<BoardShuffleStartedSignal>(OnShuffleStarted);
             m_GamePipe.UnsubscribeFrom<BoardShuffleCompletedSignal>(OnShuffleCompleted);
             m_GamePipe.UnsubscribeFrom<SpecialTileCreatedSignal>(OnSpecialTileCreated);
+            m_GamePipe.UnsubscribeFrom<SpecialConversionSignal>(OnSpecialConversion);
+            m_GamePipe.UnsubscribeFrom<HintShownSignal>(OnHintShown);
         }
 
         private void OnBoardCreated(ref BoardCreatedSignal signal)
@@ -113,7 +122,7 @@ namespace Match3.View
                 {
                     GridPosition position = new GridPosition(x, y);
                     m_Board.TryGet(position, out Tile tile);
-                    m_Tiles[ToIndex(position)] = m_Pool.Get(tile.Color, m_Geometry.ToWorld(position));
+                    m_Tiles[ToIndex(position)] = m_Pool.Get(tile.Color, tile.Special, m_Geometry.ToWorld(position));
                 }
             }
         }
@@ -164,12 +173,13 @@ namespace Match3.View
             MoveTo(toTile, m_Geometry.ToWorld(to), SwapDuration);
         }
 
-        private async UniTaskVoid AnimateClear(IReadOnlyList<GridPosition> cells)
+        private async UniTaskVoid AnimateClear(IReadOnlyList<ClearedCell> cells)
         {
             m_Clearing.Clear();
+            int lastWave = 0;
             for (int index = 0; index < cells.Count; index++)
             {
-                int cell = ToIndex(cells[index]);
+                int cell = ToIndex(cells[index].Position);
                 TileView tile = m_Tiles[cell];
                 if (tile == null)
                 {
@@ -178,10 +188,11 @@ namespace Match3.View
 
                 m_Tiles[cell] = null;
                 m_Clearing.Add(tile);
-                ShrinkAway(tile);
+                lastWave = Mathf.Max(lastWave, cells[index].Wave);
+                ShrinkAway(tile, cells[index].Wave * ClearStaggerStep);
             }
 
-            await Wait(ClearDuration);
+            await Wait(ClearDuration + (lastWave * ClearStaggerStep));
 
             for (int index = 0; index < m_Clearing.Count; index++)
             {
@@ -195,9 +206,68 @@ namespace Match3.View
         private void OnSpecialTileCreated(ref SpecialTileCreatedSignal signal)
         {
             m_Board.TryGet(signal.Position, out Tile tile);
-            TileView view = m_Pool.Get(tile.Color, m_Geometry.ToWorld(signal.Position));
-            m_Tiles[ToIndex(signal.Position)] = view;
+            int index = ToIndex(signal.Position);
+            if (m_Tiles[index] != null)
+            {
+                m_Pool.Release(m_Tiles[index]);
+            }
+
+            TileView view = m_Pool.Get(tile.Color, tile.Special, m_Geometry.ToWorld(signal.Position));
+            m_Tiles[index] = view;
             Highlight(view);
+        }
+
+        private void OnHintShown(ref HintShownSignal signal)
+        {
+            HighlightAt(signal.From);
+            if (!signal.To.Equals(signal.From))
+            {
+                HighlightAt(signal.To);
+            }
+        }
+
+        private void HighlightAt(GridPosition position)
+        {
+            TileView tile = m_Tiles[ToIndex(position)];
+            if (tile != null)
+            {
+                Punch(tile, m_HintSettings.HighlightStrength, m_HintSettings.HighlightDuration, m_HintSettings.HighlightFrequency);
+            }
+        }
+
+        private void OnSpecialConversion(ref SpecialConversionSignal signal)
+        {
+            AnimateConversion(signal.Color, signal.Special).Forget();
+        }
+
+        private async UniTaskVoid AnimateConversion(TileColor color, SpecialTileType special)
+        {
+            for (int y = 0; y < m_Board.Height; y++)
+            {
+                for (int x = 0; x < m_Board.Width; x++)
+                {
+                    GridPosition position = new GridPosition(x, y);
+                    m_Board.TryGet(position, out Tile tile);
+                    if (tile.IsEmpty || tile.Special != special || tile.Color != color)
+                    {
+                        continue;
+                    }
+
+                    int cell = ToIndex(position);
+                    if (m_Tiles[cell] != null)
+                    {
+                        m_Pool.Release(m_Tiles[cell]);
+                    }
+
+                    TileView view = m_Pool.Get(tile.Color, tile.Special, m_Geometry.ToWorld(position));
+                    m_Tiles[cell] = view;
+                    Highlight(view);
+                }
+            }
+
+            await Wait(HighlightDuration);
+
+            m_GamePipe.Raise(new BoardAnimationCompletedSignal());
         }
 
         private async UniTaskVoid AnimateRefill(IReadOnlyList<TileMove> moves, IReadOnlyList<TileSpawn> spawns)
@@ -216,7 +286,7 @@ namespace Match3.View
                 TileSpawn spawn = spawns[index];
                 Vector3 target = m_Geometry.ToWorld(spawn.Position);
                 Vector3 origin = target + (Vector3.up * m_Geometry.SpawnHeight);
-                TileView tile = m_Pool.Get(spawn.Tile.Color, origin);
+                TileView tile = m_Pool.Get(spawn.Tile.Color, spawn.Tile.Special, origin);
                 m_Tiles[ToIndex(spawn.Position)] = tile;
                 MoveTo(tile, target, FallDuration);
             }
@@ -244,18 +314,22 @@ namespace Match3.View
                 .AddTo(tile.gameObject);
         }
 
-        private static void Highlight(TileView tile)
+        private static void Highlight(TileView tile) =>
+            Punch(tile, HighlightStrength, HighlightDuration, HighlightFrequency);
+
+        private static void Punch(TileView tile, float strength, float duration, int frequency)
         {
-            LMotion.Punch.Create(Vector3.one, Vector3.one * HighlightStrength, HighlightDuration)
-                .WithFrequency(HighlightFrequency)
+            LMotion.Punch.Create(tile.BaseScale, tile.BaseScale * strength, duration)
+                .WithFrequency(frequency)
                 .BindToLocalScale(tile.Transform)
                 .AddTo(tile.gameObject);
         }
 
-        private static void ShrinkAway(TileView tile)
+        private static void ShrinkAway(TileView tile, float delay)
         {
-            LMotion.Create(Vector3.one, Vector3.zero, ClearDuration)
+            LMotion.Create(tile.BaseScale, Vector3.zero, ClearDuration)
                 .WithEase(Ease.InQuad)
+                .WithDelay(delay)
                 .BindToLocalScale(tile.Transform)
                 .AddTo(tile.gameObject);
         }

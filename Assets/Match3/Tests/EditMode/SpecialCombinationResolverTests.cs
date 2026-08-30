@@ -12,8 +12,7 @@ namespace Match3.Tests.EditMode
         private const int Height = 7;
         private const TileColor FillerColor = TileColor.Blue;
         private const TileColor PartnerColor = TileColor.Red;
-        private const int CrossCellCount = 13;
-        private const int TripleCrossCellCount = 33;
+        private const int TripleLineCellCount = 21;
         private const int WideBlastCellCount = 25;
         private const int PartnerCellCount = 3;
 
@@ -21,14 +20,14 @@ namespace Match3.Tests.EditMode
         private static readonly GridPosition To = new GridPosition(4, 3);
 
         private SpecialCombinationResolver m_Resolver;
-        private List<GridPosition> m_Cells;
+        private List<ClearedCell> m_Cells;
         private Board m_Board;
 
         [SetUp]
         public void SetUp()
         {
             m_Resolver = new SpecialCombinationResolver();
-            m_Cells = new List<GridPosition>();
+            m_Cells = new List<ClearedCell>();
             m_Board = CreateFilledBoard();
         }
 
@@ -41,39 +40,40 @@ namespace Match3.Tests.EditMode
         }
 
         [Test]
-        public void RocketAndRocketClearsACross()
+        public void RocketPairsAreNotACombination()
         {
-            Place(SpecialTileType.HorizontalRocket, SpecialTileType.VerticalRocket);
-
-            Assert.IsTrue(m_Resolver.TryResolve(m_Board, From, To, m_Cells));
-
-            Assert.AreEqual(CrossCellCount, UniqueCount());
-            for (int x = 0; x < Width; x++)
-            {
-                AssertContains(new GridPosition(x, To.Y));
-            }
-
-            for (int y = 0; y < Height; y++)
-            {
-                AssertContains(new GridPosition(To.X, y));
-            }
+            Assert.IsFalse(m_Resolver.Contains(SpecialTileType.HorizontalRocket, SpecialTileType.HorizontalRocket));
+            Assert.IsFalse(m_Resolver.Contains(SpecialTileType.VerticalRocket, SpecialTileType.VerticalRocket));
+            Assert.IsFalse(m_Resolver.Contains(SpecialTileType.HorizontalRocket, SpecialTileType.VerticalRocket));
         }
 
         [Test]
-        public void RocketAndBombClearsThreeRowsAndThreeColumns()
+        public void HorizontalRocketAndBombClearsThreeRows()
         {
             Place(SpecialTileType.HorizontalRocket, SpecialTileType.Bomb);
 
             Assert.IsTrue(m_Resolver.TryResolve(m_Board, From, To, m_Cells));
 
-            Assert.AreEqual(TripleCrossCellCount, UniqueCount());
+            Assert.AreEqual(TripleLineCellCount, UniqueCount());
             for (int offset = -1; offset <= 1; offset++)
             {
                 for (int x = 0; x < Width; x++)
                 {
                     AssertContains(new GridPosition(x, To.Y + offset));
                 }
+            }
+        }
 
+        [Test]
+        public void VerticalRocketAndBombClearsThreeColumns()
+        {
+            Place(SpecialTileType.VerticalRocket, SpecialTileType.Bomb);
+
+            Assert.IsTrue(m_Resolver.TryResolve(m_Board, From, To, m_Cells));
+
+            Assert.AreEqual(TripleLineCellCount, UniqueCount());
+            for (int offset = -1; offset <= 1; offset++)
+            {
                 for (int y = 0; y < Height; y++)
                 {
                     AssertContains(new GridPosition(To.X + offset, y));
@@ -144,7 +144,7 @@ namespace Match3.Tests.EditMode
             HashSet<GridPosition> unique = new HashSet<GridPosition>();
             for (int index = 0; index < m_Cells.Count; index++)
             {
-                unique.Add(m_Cells[index]);
+                unique.Add(m_Cells[index].Position);
             }
 
             return unique.Count;
@@ -154,7 +154,7 @@ namespace Match3.Tests.EditMode
         {
             for (int index = 0; index < m_Cells.Count; index++)
             {
-                if (m_Cells[index].Equals(position))
+                if (m_Cells[index].Position.Equals(position))
                 {
                     return;
                 }
