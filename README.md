@@ -1,41 +1,58 @@
 # Match-3
 
-Sonsuz oynanan 8x8 match-3. Unity **6000.3.17f1**; VContainer, LitMotion, UniTask, Input System, URP, TMP.
+A classic endless match-3 game built in Unity 6. An 8x8 board, six tile colors, no move limit and no timer — the only goal is a higher score.
 
-## Mimari
+## About
 
-MVC; katmanlar assembly definition ile ayrılmıştır, bağımlılık tek yönlüdür.
+Strict MVC architecture with pure C# game logic, zero Unity coupling below the view layer, and every rule enforced at compile time by assembly definitions.
+
+- **Classic rules** — swap adjacent tiles, three or more in a line clears
+- **Special tiles** — rockets, bombs, and color bombs with combination effects
+- **Cascades** — chained matches raise the score multiplier
+- **Deadlock recovery** — the board reshuffles when no valid move remains, score preserved
+- **Hint system** after idle time, and a persistent high score
+- **No menus, no ads, no distractions** — just the game
+
+## Architecture
 
 ```
-Match3.Model  (saf C#, Unity referansı yok)
-   ↑
-Match3.Signals ← Match3.Controller (Unity referansı yok)
-   ↑
-Match3.View (MonoBehaviour, LitMotion, Input System)
+Model/      → Pure C# (board, matching, gravity, specials, scoring) — no Unity dependencies
+Controller/ → Game logic (move loop, cascade, input, screen flow, save) — no Unity dependencies
+View/       → Unity layer (tiles, animation, HUD, screens, touch input)
+Signals/    → Message types crossing the layers
 ```
 
-| Katman | Klasör | Sorumluluk |
-|---|---|---|
-| Model | `Assets/Match3/Scripts/Model` | Tahta, eşleşme bulma, yerçekimi, özel taş etkileri, skor. Unity'siz, tamamen test edilebilir. |
-| Controller | `Assets/Match3/Scripts/Controller` | Hamle döngüsü, cascade, girdi yorumlama, ekran akışı, kayıt. `UnityEngine` kullanmaz. |
-| View | `Assets/Match3/Scripts/View` | Taş görselleri, animasyon, HUD, ekranlar, dokunma girdisi. |
-| Data | `Assets/Match3/Scripts/Data` | `ScriptableObject` ayarları (`BoardSettings`, `ScoreSettings`, `HintSettings`) ve PlayerPrefs kaydı. |
-| Signals | `Assets/Match3/Scripts/Signals` | Katmanlar arası mesaj tipleri. |
-| Core | `Assets/Match3Core` | Projeden bağımsız altyapı: DI bootstrap, event bus (pipe), `ISignal`. |
+- **VContainer** for dependency injection — nothing is wired in the scene, every reference resolves from an installer
+- **MessagePipe** for pub/sub — classes never reference each other directly
+- **Two pipes** — `ProjectPipe` for events outliving the scene (screen flow, run start/end, save), `GamePipe` for events inside a run (swap, match, cascade, score)
+- **Assembly definitions** enforce layer isolation at compile time
+- **UniTask** everywhere — no coroutines, full cancellation support
+- **ScriptableObject settings** — board, score, and hint values live in data, never in code
 
-### İletişim
+## Tech Stack
 
-Sınıflar birbirine doğrudan referans vermez; haberleşme sinyalle yapılır. İki pipe:
+Unity 6 · URP · VContainer · MessagePipe · UniTask · LitMotion · Input System · NUnit / Unity Test Framework
 
-- **ProjectPipe** — sahne ömrünü aşan olaylar (ekran akışı, tur başlangıcı/bitişi, kayıt).
-- **GamePipe** — bir turun içinde kalan olaylar (takas, eşleşme, cascade, skor).
+## Testing
 
-### Bağımlılık enjeksiyonu
+118 EditMode tests covering the Model and Controller layers without entering play mode:
 
-VContainer; sahnede elle referans atanmaz, her şey installer'lardan çözülür:
+- **Model:** board state, generation, match finding, gravity, shuffling, move scanning, special tile creation, effects, combinations, scoring
+- **Controller:** move loop and lifetime, cascade chains, input interpretation, screen flow, save/load
 
-- `ProjectInstaller` → `ProjectPipeInstaller`
-- `MainSceneInstaller` → `GamePipeInstaller`, `Match3ModelInstaller`
-- View: `BoardViewInstaller`, `ScoreViewInstaller`, `FeedbackViewInstaller`, `ScreenInstaller`
+## How to Play
 
-Yeni bir sistem eklemek, ilgili installer'a bir satır eklemek demektir.
+- **Swap** two adjacent tiles to line up three or more of a color
+- A swap that creates no match **reverts**; swaps involving a special tile always resolve
+- Match **four in a row** for a rocket, an **L or T shape** for a bomb, **five in a line** for a color bomb
+- **Swap two specials** to combine their effects
+- Longer cascade chains raise the **score multiplier**
+- Play until you beat your **high score** — there is no way to lose
+
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [GDD.md](Docs/GDD.md) | Game Design Document — mechanics, rules, design decisions |
+| [IMPLEMENTATION_TASKS.md](Docs/IMPLEMENTATION_TASKS.md) | Phased task list and signal inventory |
+| [ASSETS.md](Docs/ASSETS.md) | Art and audio asset reference |
