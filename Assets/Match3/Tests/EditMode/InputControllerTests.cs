@@ -4,7 +4,7 @@ using Match3.Model;
 using Match3.Model.Enums;
 using Match3.Signals;
 using NUnit.Framework;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Tests.EditMode
 {

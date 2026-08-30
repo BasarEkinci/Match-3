@@ -1,7 +1,7 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Match3.Model;
 using Match3.Model.Enums;
-using Syntac.Signals;
+using Match3.Core.Signals;
 
 namespace Match3.Signals
 {
@@ -36,6 +36,16 @@ namespace Match3.Signals
         }
 
         public GridPosition Origin { get; }
+    }
+
+    public readonly struct SpecialActivationRequestedSignal : ISignal
+    {
+        public SpecialActivationRequestedSignal(GridPosition position)
+        {
+            Position = position;
+        }
+
+        public GridPosition Position { get; }
     }
 
     public readonly struct SwapRequestedSignal : ISignal
@@ -92,13 +102,13 @@ namespace Match3.Signals
 
     public readonly struct CellsClearedSignal : ISignal
     {
-        public CellsClearedSignal(IReadOnlyList<GridPosition> cells, int cascadeStep)
+        public CellsClearedSignal(IReadOnlyList<ClearedCell> cells, int cascadeStep)
         {
             Cells = cells;
             CascadeStep = cascadeStep;
         }
 
-        public IReadOnlyList<GridPosition> Cells { get; }
+        public IReadOnlyList<ClearedCell> Cells { get; }
 
         public int CascadeStep { get; }
     }
@@ -114,6 +124,19 @@ namespace Match3.Signals
         public IReadOnlyList<TileMove> Moves { get; }
 
         public IReadOnlyList<TileSpawn> Spawns { get; }
+    }
+
+    public readonly struct HintShownSignal : ISignal
+    {
+        public HintShownSignal(GridPosition from, GridPosition to)
+        {
+            From = from;
+            To = to;
+        }
+
+        public GridPosition From { get; }
+
+        public GridPosition To { get; }
     }
 
     public readonly struct BoardAnimationCompletedSignal : ISignal
@@ -151,6 +174,19 @@ namespace Match3.Signals
         public SpecialTileType Type { get; }
     }
 
+    public readonly struct SpecialConversionSignal : ISignal
+    {
+        public SpecialConversionSignal(TileColor color, SpecialTileType special)
+        {
+            Color = color;
+            Special = special;
+        }
+
+        public TileColor Color { get; }
+
+        public SpecialTileType Special { get; }
+    }
+
     public readonly struct SpecialCombinationTriggeredSignal : ISignal
     {
         public SpecialCombinationTriggeredSignal(SpecialTileType first, SpecialTileType second, GridPosition origin)
@@ -165,5 +201,15 @@ namespace Match3.Signals
         public SpecialTileType Second { get; }
 
         public GridPosition Origin { get; }
+    }
+
+    public readonly struct DebugSpecialRequestedSignal : ISignal
+    {
+        public DebugSpecialRequestedSignal(SpecialTileType type)
+        {
+            Type = type;
+        }
+
+        public SpecialTileType Type { get; }
     }
 }

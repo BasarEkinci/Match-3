@@ -5,7 +5,7 @@ using Match3.Model.Matching;
 using Match3.Model.Special;
 using Match3.Signals;
 using NUnit.Framework;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Tests.EditMode
 {
@@ -52,7 +52,6 @@ namespace Match3.Tests.EditMode
                 new MoveScanner(matchFinder),
                 new ChainResolver(new SpecialTileEffects()),
                 new SpecialCombinationResolver(),
-                TestBoosters.Empty(),
                 new FakeSaveRepository());
         }
 

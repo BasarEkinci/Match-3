@@ -1,9 +1,8 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using Cysharp.Threading.Tasks;
 using Match3.Model;
-using Match3.Model.Boosters;
 using Match3.Model.Enums;
 using Match3.Model.Generation;
 using Match3.Model.Gravity;
@@ -12,7 +11,7 @@ using Match3.Model.Persistence;
 using Match3.Model.Settings;
 using Match3.Model.Special;
 using Match3.Signals;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 
 namespace Match3.Controller
 {
@@ -20,6 +19,7 @@ namespace Match3.Controller
     {
         private const int AdjacentDistance = 1;
         private const int FirstCascadeStep = 1;
+        private const int FirstWave = 0;
 
         private readonly GamePipe m_GamePipe;
         private readonly ProjectPipe m_ProjectPipe;
@@ -30,13 +30,11 @@ namespace Match3.Controller
         private readonly Board m_Board;
         private readonly List<TileMove> m_Moves = new List<TileMove>();
         private readonly List<TileSpawn> m_Spawns = new List<TileSpawn>();
-        private readonly List<GridPosition> m_Cleared = new List<GridPosition>();
+        private readonly List<ClearedCell> m_Cleared = new List<ClearedCell>();
         private readonly ChainResolver m_ChainResolver;
         private readonly SpecialCombinationResolver m_Combinations;
-        private readonly BoosterModel m_Boosters;
         private readonly ISaveRepository m_Save;
-        private readonly ColorBombEffect m_ColorSweep = new ColorBombEffect();
-        private readonly List<GridPosition> m_Seeds = new List<GridPosition>();
+        private readonly List<ClearedCell> m_Seeds = new List<ClearedCell>();
         private readonly CancellationTokenSource m_Lifetime = new CancellationTokenSource();
 
         private CancellationTokenSource m_Round;
@@ -55,7 +53,6 @@ namespace Match3.Controller
             IMoveScanner moveScanner,
             ChainResolver chainResolver,
             SpecialCombinationResolver combinations,
-            BoosterModel boosters,
             ISaveRepository save)
         {
             m_GamePipe = gamePipe;
@@ -66,13 +63,12 @@ namespace Match3.Controller
             m_MoveScanner = moveScanner;
             m_ChainResolver = chainResolver;
             m_Combinations = combinations;
-            m_Boosters = boosters;
             m_Save = save;
             m_Board = new Board(settings.Width, settings.Height);
 
             m_ProjectPipe.SubscribeTo<RoundStartedSignal>(OnRoundStarted);
             m_GamePipe.SubscribeTo<SwapRequestedSignal>(OnSwapRequested);
-            m_GamePipe.SubscribeTo<BoosterUseRequestedSignal>(OnBoosterUseRequested);
+            m_GamePipe.SubscribeTo<SpecialActivationRequestedSignal>(OnSpecialActivationRequested);
             m_GamePipe.SubscribeTo<BoardAnimationCompletedSignal>(OnAnimationCompleted);
         }
 
@@ -89,7 +85,7 @@ namespace Match3.Controller
             m_Lifetime.Dispose();
             m_ProjectPipe.UnsubscribeFrom<RoundStartedSignal>(OnRoundStarted);
             m_GamePipe.UnsubscribeFrom<SwapRequestedSignal>(OnSwapRequested);
-            m_GamePipe.UnsubscribeFrom<BoosterUseRequestedSignal>(OnBoosterUseRequested);
+            m_GamePipe.UnsubscribeFrom<SpecialActivationRequestedSignal>(OnSpecialActivationRequested);
             m_GamePipe.UnsubscribeFrom<BoardAnimationCompletedSignal>(OnAnimationCompleted);
         }
 
@@ -136,12 +132,13 @@ namespace Match3.Controller
                 return;
             }
 
+            m_Seeds.Clear();
             bool isCombination = IsCombination(signal.From, signal.To);
             if (isCombination)
             {
                 m_Board.Swap(signal.From, signal.To);
             }
-            else if (!CreatesMatch(signal.From, signal.To))
+            else if (!CreatesMatch(signal.From, signal.To) && !TrySeedActivation(signal.From, signal.To))
             {
                 m_GamePipe.Raise(new SwapRejectedSignal(signal.From, signal.To));
                 return;
@@ -152,21 +149,52 @@ namespace Match3.Controller
             RunSwap(signal.From, signal.To, isCombination, m_Round.Token).Forget();
         }
 
-        private void OnBoosterUseRequested(ref BoosterUseRequestedSignal signal)
+        private void OnSpecialActivationRequested(ref SpecialActivationRequestedSignal signal)
         {
-            if (m_State != BoardState.Idle || m_Round == null || !IsApplicable(signal.Booster, signal.Target))
+            if (m_State != BoardState.Idle || m_Round == null)
             {
                 return;
             }
 
-            if (!m_Boosters.TryConsume(signal.Booster))
+            m_Seeds.Clear();
+            if (!TrySeed(signal.Position))
             {
                 return;
             }
 
             m_State = BoardState.Resolving;
             m_GamePipe.Raise(new InputLockChangedSignal(true));
-            RunBooster(signal.Booster, signal.Target, m_Round.Token).Forget();
+            ResolveCascade(signal.Position, signal.Position, m_Round.Token).Forget();
+        }
+
+        private bool TrySeedActivation(GridPosition from, GridPosition to)
+        {
+            if (!HasSpecial(from) && !HasSpecial(to))
+            {
+                return false;
+            }
+
+            m_Board.Swap(from, to);
+            TrySeed(from);
+            TrySeed(to);
+            return true;
+        }
+
+        private bool TrySeed(GridPosition position)
+        {
+            if (!HasSpecial(position))
+            {
+                return false;
+            }
+
+            m_Seeds.Add(new ClearedCell(position, FirstWave));
+            return true;
+        }
+
+        private bool HasSpecial(GridPosition position)
+        {
+            m_Board.TryGet(position, out Tile tile);
+            return !tile.IsEmpty && tile.Special != SpecialTileType.None;
         }
 
         private async UniTaskVoid RunSwap(
@@ -179,42 +207,12 @@ namespace Match3.Controller
             m_GamePipe.Raise(new SwapAcceptedSignal(from, to));
             await swapAnimation;
 
-            m_Seeds.Clear();
             if (isCombination)
             {
-                SeedCombination(from, to);
+                await ResolveCombination(from, to, token);
             }
 
             await ResolveCascade(from, to, token);
-        }
-
-        private async UniTaskVoid RunBooster(BoosterType booster, GridPosition target, CancellationToken token)
-        {
-            m_Seeds.Clear();
-            m_GamePipe.Raise(new BoosterAppliedSignal(booster, target));
-            switch (booster)
-            {
-                case BoosterType.Shuffle:
-                    await Shuffle(token);
-                    break;
-                case BoosterType.ColorPicker:
-                    SeedColor(target);
-                    break;
-                default:
-                    m_Seeds.Add(target);
-                    break;
-            }
-
-            await ResolveCascade(target, target, token);
-        }
-
-        private bool IsApplicable(BoosterType booster, GridPosition target) =>
-            booster == BoosterType.Shuffle || m_Board.Contains(target);
-
-        private void SeedColor(GridPosition target)
-        {
-            m_Board.TryGet(target, out Tile tile);
-            m_ColorSweep.Collect(m_Board, target, tile, m_Seeds);
         }
 
         private async UniTask ResolveCascade(GridPosition from, GridPosition to, CancellationToken token)
@@ -265,7 +263,7 @@ namespace Match3.Controller
 
         private async UniTask EnsurePlayableBoard(CancellationToken token)
         {
-            if (m_MoveScanner.HasAnyMove(m_Board))
+            if (m_MoveScanner.TryFindMove(m_Board, out _, out _))
             {
                 return;
             }
@@ -308,7 +306,7 @@ namespace Match3.Controller
             return m_Combinations.Contains(first.Special, second.Special);
         }
 
-        private void SeedCombination(GridPosition from, GridPosition to)
+        private async UniTask ResolveCombination(GridPosition from, GridPosition to, CancellationToken token)
         {
             m_Board.TryGet(to, out Tile first);
             m_Board.TryGet(from, out Tile second);
@@ -317,7 +315,51 @@ namespace Match3.Controller
                 return;
             }
 
+            m_Board.Set(from, Tile.Empty);
+            m_Board.Set(to, Tile.Empty);
             m_GamePipe.Raise(new SpecialCombinationTriggeredSignal(first.Special, second.Special, to));
+
+            Tile partner = ConvertiblePartner(first, second);
+            if (partner.IsEmpty)
+            {
+                return;
+            }
+
+            ConvertTiles(partner.Color, partner.Special);
+            UniTask conversionAnimation = WaitForAnimation(token);
+            m_GamePipe.Raise(new SpecialConversionSignal(partner.Color, partner.Special));
+            await conversionAnimation;
+        }
+
+        private static Tile ConvertiblePartner(Tile first, Tile second)
+        {
+            if (first.Special != SpecialTileType.ColorBomb && second.Special != SpecialTileType.ColorBomb)
+            {
+                return Tile.Empty;
+            }
+
+            Tile partner = first.Special == SpecialTileType.ColorBomb ? second : first;
+            return partner.Special == SpecialTileType.None || partner.Special == SpecialTileType.ColorBomb
+                ? Tile.Empty
+                : partner;
+        }
+
+        private void ConvertTiles(TileColor color, SpecialTileType special)
+        {
+            for (int y = 0; y < m_Board.Height; y++)
+            {
+                for (int x = 0; x < m_Board.Width; x++)
+                {
+                    GridPosition position = new GridPosition(x, y);
+                    m_Board.TryGet(position, out Tile tile);
+                    if (tile.IsEmpty || tile.Color != color || tile.Special != SpecialTileType.None)
+                    {
+                        continue;
+                    }
+
+                    m_Board.Set(position, new Tile(color, special));
+                }
+            }
         }
 
         private void SeedGroups(IReadOnlyList<MatchGroup> groups)
@@ -327,7 +369,7 @@ namespace Match3.Controller
                 IReadOnlyList<GridPosition> positions = groups[groupIndex].Positions;
                 for (int index = 0; index < positions.Count; index++)
                 {
-                    m_Seeds.Add(positions[index]);
+                    m_Seeds.Add(new ClearedCell(positions[index], FirstWave));
                 }
             }
         }
@@ -336,7 +378,7 @@ namespace Match3.Controller
         {
             for (int index = 0; index < m_Cleared.Count; index++)
             {
-                m_Board.Set(m_Cleared[index], Tile.Empty);
+                m_Board.Set(m_Cleared[index].Position, Tile.Empty);
             }
         }
 
