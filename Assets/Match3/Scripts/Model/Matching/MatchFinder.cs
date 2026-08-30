@@ -5,7 +5,7 @@ using Match3.Model.Settings;
 
 namespace Match3.Model.Matching
 {
-    public sealed class MatchFinder : IMatchFinder
+    public sealed class MatchFinder
     {
         private const int NoRun = -1;
         private const int Line4Length = 4;

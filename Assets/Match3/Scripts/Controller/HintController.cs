@@ -12,7 +12,7 @@ namespace Match3.Controller
     public sealed class HintController : IDisposable
     {
         private readonly GamePipe m_GamePipe;
-        private readonly IMoveScanner m_MoveScanner;
+        private readonly MoveScanner m_MoveScanner;
         private readonly IHintSettings m_Settings;
         private readonly CancellationTokenSource m_Lifetime = new CancellationTokenSource();
 
@@ -20,7 +20,7 @@ namespace Match3.Controller
         private CancellationTokenSource m_Idle;
         private bool m_IsDisposed;
 
-        public HintController(GamePipe gamePipe, IMoveScanner moveScanner, IHintSettings settings)
+        public HintController(GamePipe gamePipe, MoveScanner moveScanner, IHintSettings settings)
         {
             m_GamePipe = gamePipe;
             m_MoveScanner = moveScanner;

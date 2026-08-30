@@ -24,9 +24,9 @@ namespace Match3.Controller
         private readonly GamePipe m_GamePipe;
         private readonly ProjectPipe m_ProjectPipe;
         private readonly IBoardGenerator m_Generator;
-        private readonly IMatchFinder m_MatchFinder;
+        private readonly MatchFinder m_MatchFinder;
         private readonly IGravityResolver m_GravityResolver;
-        private readonly IMoveScanner m_MoveScanner;
+        private readonly MoveScanner m_MoveScanner;
         private readonly Board m_Board;
         private readonly List<TileMove> m_Moves = new List<TileMove>();
         private readonly List<TileSpawn> m_Spawns = new List<TileSpawn>();
@@ -39,7 +39,7 @@ namespace Match3.Controller
 
         private CancellationTokenSource m_Round;
 
-        private BoardState m_State;
+        private bool m_IsBusy;
         private bool m_IsDisposed;
         private UniTaskCompletionSource m_AnimationCompletion;
 
@@ -48,9 +48,9 @@ namespace Match3.Controller
             ProjectPipe projectPipe,
             IBoardSettings settings,
             IBoardGenerator generator,
-            IMatchFinder matchFinder,
+            MatchFinder matchFinder,
             IGravityResolver gravityResolver,
-            IMoveScanner moveScanner,
+            MoveScanner moveScanner,
             ChainResolver chainResolver,
             SpecialCombinationResolver combinations,
             ISaveRepository save)
@@ -102,7 +102,7 @@ namespace Match3.Controller
                 m_Generator.Generate(m_Board);
             }
 
-            m_State = BoardState.Idle;
+            m_IsBusy = false;
             m_GamePipe.Raise(new BoardCreatedSignal(m_Board));
             m_GamePipe.Raise(new InputLockChangedSignal(false));
         }
@@ -121,7 +121,7 @@ namespace Match3.Controller
 
         private void OnSwapRequested(ref SwapRequestedSignal signal)
         {
-            if (m_State != BoardState.Idle || m_Round == null)
+            if (m_IsBusy || m_Round == null)
             {
                 return;
             }
@@ -147,14 +147,14 @@ namespace Match3.Controller
                 }
             }
 
-            m_State = BoardState.Swapping;
+            m_IsBusy = true;
             m_GamePipe.Raise(new InputLockChangedSignal(true));
             RunSwap(signal.From, signal.To, isCombination, m_Round.Token).Forget();
         }
 
         private void OnSpecialActivationRequested(ref SpecialActivationRequestedSignal signal)
         {
-            if (m_State != BoardState.Idle || m_Round == null)
+            if (m_IsBusy || m_Round == null)
             {
                 return;
             }
@@ -165,7 +165,7 @@ namespace Match3.Controller
                 return;
             }
 
-            m_State = BoardState.Resolving;
+            m_IsBusy = true;
             m_GamePipe.Raise(new InputLockChangedSignal(true));
             ResolveCascade(signal.Position, signal.Position, m_Round.Token).Forget();
         }
@@ -221,7 +221,6 @@ namespace Match3.Controller
                     m_GamePipe.Raise(new MatchesResolvedSignal(groups, cascadeStep));
                 }
 
-                m_State = BoardState.Resolving;
                 m_ChainResolver.Collect(m_Board, m_Seeds, m_Cleared);
                 m_Seeds.Clear();
                 UniTask clearAnimation = WaitForAnimation(token);
@@ -234,7 +233,6 @@ namespace Match3.Controller
 
                 await clearAnimation;
 
-                m_State = BoardState.Refilling;
                 m_GravityResolver.Resolve(m_Board, m_Moves, m_Spawns);
                 UniTask refillAnimation = WaitForAnimation(token);
                 m_GamePipe.Raise(new BoardRefilledSignal(m_Moves, m_Spawns));
@@ -245,7 +243,7 @@ namespace Match3.Controller
 
             await EnsurePlayableBoard(token);
 
-            m_State = BoardState.Idle;
+            m_IsBusy = false;
             m_GamePipe.Raise(new InputLockChangedSignal(false));
         }
 
@@ -261,7 +259,6 @@ namespace Match3.Controller
 
         private async UniTask Shuffle(CancellationToken token)
         {
-            m_State = BoardState.Shuffling;
             UniTask noticeAnimation = WaitForAnimation(token);
             m_GamePipe.Raise(new BoardShuffleStartedSignal());
             await noticeAnimation;

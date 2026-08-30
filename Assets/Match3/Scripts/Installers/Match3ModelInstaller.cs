@@ -16,8 +16,8 @@ namespace Match3.Installers
         public void Install(IContainerBuilder builder)
         {
             builder.RegisterInstance(new System.Random());
-            builder.Register<MatchFinder>(Lifetime.Singleton).As<IMatchFinder>();
-            builder.Register<MoveScanner>(Lifetime.Singleton).As<IMoveScanner>();
+            builder.Register<MatchFinder>(Lifetime.Singleton);
+            builder.Register<MoveScanner>(Lifetime.Singleton);
             builder.Register<BoardGenerator>(Lifetime.Singleton).As<IBoardGenerator>();
             builder.Register<GravityResolver>(Lifetime.Singleton).As<IGravityResolver>();
             builder.Register<SpecialTileEffects>(Lifetime.Singleton);

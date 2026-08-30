@@ -2,11 +2,11 @@ using Match3.Model.Enums;
 
 namespace Match3.Model.Matching
 {
-    public sealed class MoveScanner : IMoveScanner
+    public sealed class MoveScanner
     {
-        private readonly IMatchFinder m_MatchFinder;
+        private readonly MatchFinder m_MatchFinder;
 
-        public MoveScanner(IMatchFinder matchFinder)
+        public MoveScanner(MatchFinder matchFinder)
         {
             m_MatchFinder = matchFinder;
         }

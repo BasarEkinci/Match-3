@@ -8,15 +8,15 @@ namespace Match3.Model.Generation
     public sealed class BoardGenerator : IBoardGenerator
     {
         private readonly IBoardSettings m_Settings;
-        private readonly IMatchFinder m_MatchFinder;
-        private readonly IMoveScanner m_MoveScanner;
+        private readonly MatchFinder m_MatchFinder;
+        private readonly MoveScanner m_MoveScanner;
         private readonly Random m_Random;
         private readonly int[] m_ColorOrder;
 
         public BoardGenerator(
             IBoardSettings settings,
-            IMatchFinder matchFinder,
-            IMoveScanner moveScanner,
+            MatchFinder matchFinder,
+            MoveScanner moveScanner,
             Random random)
         {
             m_Settings = settings;
