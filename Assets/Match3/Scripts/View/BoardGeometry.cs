@@ -6,7 +6,6 @@ namespace Match3.View
 {
     public sealed class BoardGeometry
     {
-        private const float CellSize = 1f;
         private const float CenterOffset = 0.5f;
 
         private readonly IBoardSettings m_Settings;
@@ -15,6 +14,10 @@ namespace Match3.View
         {
             m_Settings = settings;
         }
+
+        public float CellSize => m_Settings.CellSize;
+
+        public Vector2 BoardSize => new Vector2(m_Settings.Width, m_Settings.Height) * CellSize;
 
         public float SpawnHeight => m_Settings.Height * CellSize;
 

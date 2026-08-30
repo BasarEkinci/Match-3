@@ -12,7 +12,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b37fab49ec724de7ae44266c6ea4f5d3, type: 3}
   m_Name: BoardSettings
   m_EditorClassIdentifier: 
-  width: 8
+  width: 6
   height: 8
   colorCount: 6
   minMatchLength: 3
+  cellSize: 0.75

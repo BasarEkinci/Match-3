@@ -1,7 +1,7 @@
 using Match3.Model;
 using Match3.Model.Enums;
 using Match3.Signals;
-using Syntac.MessagePipe.Pipes;
+using Match3.Core.MessagePipe.Pipes;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using VContainer;
@@ -10,7 +10,7 @@ namespace Match3.View
 {
     public sealed class BoardInputView : MonoBehaviour
     {
-        private const float DragThreshold = 0.35f;
+        private const float DragThresholdRatio = 0.35f;
 
         private GamePipe m_GamePipe;
         private BoardGeometry m_Geometry;
@@ -69,7 +69,7 @@ namespace Match3.View
         private void TryEmitDrag(Pointer pointer)
         {
             Vector3 delta = ToWorldPoint(pointer) - m_PressWorldPoint;
-            if (delta.magnitude < DragThreshold)
+            if (delta.magnitude < DragThresholdRatio * m_Geometry.CellSize)
             {
                 return;
             }

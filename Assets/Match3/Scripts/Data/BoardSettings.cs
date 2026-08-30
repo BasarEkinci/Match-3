@@ -17,6 +17,9 @@ namespace Match3.Data
         private const int MinAllowedMatchLength = 3;
         private const int MaxAllowedMatchLength = 5;
         private const int DefaultMinMatchLength = 3;
+        private const float MinCellSize = 0.5f;
+        private const float MaxCellSize = 3f;
+        private const float DefaultCellSize = 1f;
 
         [SerializeField, Range(MinBoardSize, MaxBoardSize)]
         private int width = DefaultBoardSize;
@@ -30,6 +33,9 @@ namespace Match3.Data
         [SerializeField, Range(MinAllowedMatchLength, MaxAllowedMatchLength)]
         private int minMatchLength = DefaultMinMatchLength;
 
+        [SerializeField, Range(MinCellSize, MaxCellSize)]
+        private float cellSize = DefaultCellSize;
+
         public int Width => width;
 
         public int Height => height;
@@ -37,5 +43,7 @@ namespace Match3.Data
         public int ColorCount => colorCount;
 
         public int MinMatchLength => minMatchLength;
+
+        public float CellSize => cellSize;
     }
 }

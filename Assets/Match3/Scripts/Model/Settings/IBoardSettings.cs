@@ -9,5 +9,7 @@ namespace Match3.Model.Settings
         int ColorCount { get; }
 
         int MinMatchLength { get; }
+
+        float CellSize { get; }
     }
 }

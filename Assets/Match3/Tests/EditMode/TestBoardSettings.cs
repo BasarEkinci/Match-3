@@ -6,6 +6,7 @@ namespace Match3.Tests.EditMode
     {
         private const int TileColorCount = 6;
         private const int MatchLength = 3;
+        private const float DefaultCellSize = 1f;
 
         public TestBoardSettings(int width, int height)
         {
@@ -20,5 +21,7 @@ namespace Match3.Tests.EditMode
         public int ColorCount => TileColorCount;
 
         public int MinMatchLength => MatchLength;
+
+        public float CellSize => DefaultCellSize;
     }
 }
