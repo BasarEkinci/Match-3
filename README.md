@@ -39,12 +39,3 @@ Unity 6 · URP · VContainer · MessagePipe · UniTask · LitMotion · Input Sys
 
 - **Model:** board state, generation, match finding, gravity, shuffling, move scanning, special tile creation, effects, combinations, scoring
 - **Controller:** move loop and lifetime, cascade chains, input interpretation, screen flow, save/load
-
-## How to Play
-
-- **Swap** two adjacent tiles to line up three or more of a color
-- A swap that creates no match **reverts**; swaps involving a special tile always resolve
-- Match **four in a row** for a rocket, an **L or T shape** for a bomb, **five in a line** for a color bomb
-- **Swap two specials** to combine their effects
-- Longer cascade chains raise the **score multiplier**
-- Play until you beat your **high score** — there is no way to lose
